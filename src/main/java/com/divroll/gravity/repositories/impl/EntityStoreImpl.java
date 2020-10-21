@@ -40,7 +40,7 @@ import com.divroll.gravity.builders.RemoteEntityProperty;
 import com.divroll.gravity.builders.RemoteEntityQuery;
 import com.divroll.gravity.builders.RemoteEntityUpdate;
 import com.divroll.gravity.builders.RemoteTransactionFilter;
-import com.divroll.gravity.repositories.EntityRepository;
+import com.divroll.gravity.repositories.EntityStore;
 import com.divroll.gravity.database.DatabaseManager;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
@@ -74,13 +74,13 @@ import util.ComparableHashMap;
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class EntityRepositoryImpl extends BaseRespositoryImpl implements EntityRepository {
+public class EntityStoreImpl extends BaseRespositoryImpl implements EntityStore {
 
-  private static final Logger LOG = LoggerFactory.getLogger(EntityRepositoryImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(EntityStoreImpl.class);
 
   private DatabaseManager manager;
 
-  public EntityRepositoryImpl(DatabaseManager databaseManager)
+  public EntityStoreImpl(DatabaseManager databaseManager)
       throws NotBoundException, RemoteException {
     this.manager = databaseManager;
   }
@@ -119,7 +119,7 @@ public class EntityRepositoryImpl extends BaseRespositoryImpl implements EntityR
           }
 
           Entity entityInContext = entity.entityId() != null ?
-              txn.getEntity(txn.toEntityId(entity.entityId())) : null;
+              txn.getEntity(txn.toEntityId(entity.entityId())) : txn.newEntity(entity.entityType());
           if (reference.get().indexOf(entityInContext) == -1 && entity.nameSpace() != null) {
             throw new IllegalArgumentException(
                 "Entity " + entity.entityId() + " not found in namespace " + entity.nameSpace());
@@ -289,8 +289,12 @@ public class EntityRepositoryImpl extends BaseRespositoryImpl implements EntityR
 
   @Override public Optional<RemoteEntity> getEntity(@NotNull RemoteEntityQuery query)
       throws NotBoundException, RemoteException {
-    RemoteEntities remoteEntities = getEntities(query).get();
-    return remoteEntities.entities().stream().findFirst();
+    Optional<RemoteEntities> optional = getEntities(query);
+    if(optional.isPresent()) {
+      return optional.get().entities().stream().findFirst();
+    } else {
+      return Optional.empty();
+    }
   }
 
   @Override
@@ -308,12 +312,16 @@ public class EntityRepositoryImpl extends BaseRespositoryImpl implements EntityR
     manager.transactPersistentEntityStore(dir, true, txn -> {
 
       AtomicReference<EntityIterable> result = null;
-      if (nameSpace != null && !nameSpace.isEmpty()) {
+      if (nameSpace != null && !nameSpace.isEmpty() && entityType != null) {
         result.set(txn.findWithProp(entityType, Constants.NAMESPACE_PROPERTY)
             .intersect(txn.find(entityType, Constants.NAMESPACE_PROPERTY, nameSpace)));
-      } else {
+      } else if(entityType != null){
         result.set(txn.getAll(entityType)
             .minus(txn.findWithProp(entityType, Constants.NAMESPACE_PROPERTY)));
+      }
+
+      if(query.entityId() == null && entityType == null) {
+        throw new IllegalArgumentException("Either entity ID or entity type must be present");
       }
 
       if (query.entityId() != null) {
@@ -575,6 +583,7 @@ public class EntityRepositoryImpl extends BaseRespositoryImpl implements EntityR
         remoteEntityUpdates = new ArrayList<>();
       }
       remoteEntityUpdates.add(remoteEntity);
+      dirOrderedEntities.put(dir, remoteEntityUpdates);
     });
     return dirOrderedEntities;
   }

@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2020, Divroll, and individual contributors
+ * Copyright 2018, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -14,32 +14,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.gravity.builders;
+package com.divroll.gravity;
 
-import com.divroll.gravity.actions.EntityPropertyAction;
-import java.io.Serializable;
-import java.util.List;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
+import java.awt.Graphics2D;
+import org.junit.Test;
 
 /**
+ *
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-@Value.Immutable
-@Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface RemoteEntityProperty extends Serializable {
-
-  @Value.Default
-  default String environment() {
-    return System.getProperty("xodusRoot");
+public class GravityTest {
+  @Test
+  public void testStartDatabase() throws Exception {
+    Gravity database = new Gravity();
+    database.startDatabase();
   }
-
-  String entityType();
-
-  @Nullable
-  String nameSpace();
-
-  List<EntityPropertyAction> propertyActions();
+  @Test
+  public void testStopDatabase() throws Exception {
+    Gravity database = new Gravity();
+    database.stopDatabase();
+  }
 }

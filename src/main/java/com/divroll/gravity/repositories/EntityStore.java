@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityRepository extends Remote {
+public interface EntityStore extends Remote {
 
   Optional<RemoteEntity> saveEntity(@NotNull RemoteEntity entity)
       throws NotBoundException, RemoteException;

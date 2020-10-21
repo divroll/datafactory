@@ -44,7 +44,7 @@ import jetbrains.exodus.env.Environments;
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class DatabaseManagerImpl implements DatabaseManager {
+public final class DatabaseManagerImpl implements DatabaseManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(DatabaseManagerImpl.class);
   private static final int DEFAULT_LOCK_TIMEOUT = 30000;

@@ -18,8 +18,8 @@ package com.divroll.gravity;
 
 import com.divroll.gravity.registry.Registrar;
 import com.divroll.gravity.registry.impl.RegistrarImpl;
-import com.divroll.gravity.repositories.EntityRepository;
-import com.divroll.gravity.repositories.impl.EntityRepositoryImpl;
+import com.divroll.gravity.repositories.EntityStore;
+import com.divroll.gravity.repositories.impl.EntityStoreImpl;
 import com.divroll.gravity.database.impl.DatabaseManagerImpl;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
@@ -41,12 +41,12 @@ public class Gravity {
 
   Registrar registrar;
 
-  EntityRepository entityRepository;
+  EntityStore entityStore;
 
   @SneakyThrows
   public void startDatabase() throws NotBoundException, RemoteException {
-    entityRepository = new EntityRepositoryImpl(DatabaseManagerImpl.getInstance());
-    registrar = new RegistrarImpl(entityRepository);
+    entityStore = new EntityStoreImpl(DatabaseManagerImpl.getInstance());
+    registrar = new RegistrarImpl(entityStore);
     String process = ManagementFactory.getRuntimeMXBean().getName();
     registrar.register();
     LOG.debug("Started database with process id: " + process);
@@ -54,7 +54,11 @@ public class Gravity {
 
   @SneakyThrows
   public void stopDatabase() throws NotBoundException, RemoteException {
-    registrar.unregister();
+    if(registrar == null) {
+      LOG.error("Database has not started");
+    } else {
+      registrar.unregister();
+    }
   }
 
   public <T extends Comparable, B extends ComparableBinding> void registerCustomPropertyType(
@@ -62,7 +66,10 @@ public class Gravity {
     DatabaseManagerImpl.getInstance().registerCustomPropertyType(dir, clazz, binding);
   }
 
-  public EntityRepository getEntityRepository() {
-    return this.entityRepository;
+  public EntityStore getEntityStore() {
+    if(registrar == null) {
+      throw new RuntimeException("Database has not started");
+    }
+    return this.entityStore;
   }
 }

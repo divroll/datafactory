@@ -17,15 +17,13 @@
 package com.divroll.gravity.registry.impl;
 
 import com.divroll.gravity.registry.Registrar;
-import com.divroll.gravity.repositories.EntityRepository;
+import com.divroll.gravity.repositories.EntityStore;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
-import lombok.SneakyThrows;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -36,12 +34,12 @@ public class RegistrarImpl implements Registrar {
 
   private static final Logger LOG = LoggerFactory.getLogger(RegistrarImpl.class);
 
-  EntityRepository entityRepository;
+  EntityStore entityStore;
 
   static Registry registry;
 
-  public RegistrarImpl(EntityRepository entityRepository) throws RemoteException {
-    this.entityRepository = entityRepository;
+  public RegistrarImpl(EntityStore entityStore) throws RemoteException {
+    this.entityStore = entityStore;
   }
 
   @Override
@@ -50,7 +48,7 @@ public class RegistrarImpl implements Registrar {
     if (registry == null) {
       registry = LocateRegistry.createRegistry(1099);
     }
-    registry.rebind(EntityRepository.class.getName(), entityRepository);
+    registry.rebind(EntityStore.class.getName(), entityStore);
     Arrays.asList(registry.list()).forEach(className -> {
       System.out.println(className + " binding success");
     });

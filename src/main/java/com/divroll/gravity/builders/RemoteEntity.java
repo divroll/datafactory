@@ -34,7 +34,6 @@ import org.immutables.value.Value;
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
 public interface RemoteEntity extends Serializable {
 
-  @Nullable
   @Value.Default
   default String environment() {
     return System.getProperty("xodusRoot");

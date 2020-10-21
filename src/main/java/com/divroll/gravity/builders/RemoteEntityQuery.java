@@ -31,14 +31,15 @@ import org.immutables.value.Value;
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
 public interface RemoteEntityQuery extends Serializable {
 
-  @Nullable
   @Value.Default
   default String environment() {
     return System.getProperty("xodusRoot");
   }
 
+  @Nullable
   String nameSpace();
 
+  @Nullable
   String entityType();
 
   @Nullable
@@ -94,9 +95,15 @@ public interface RemoteEntityQuery extends Serializable {
     return new ArrayList<>();
   }
 
-  Integer offset();
+  @Value.Default
+  default Integer offset() {
+    return 0;
+  }
 
-  Integer max();
+  @Value.Default
+  default Integer max() {
+    return 100;
+  }
 
   @Nullable
   String sortAscending();

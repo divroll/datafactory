@@ -18,6 +18,7 @@ package com.divroll.gravity.builders;
 
 import java.io.Serializable;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -29,7 +30,10 @@ import org.immutables.value.Value;
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
 public interface RemoteEntities extends Serializable {
   List<RemoteEntity> entities();
+  @Nullable
   Integer offset();
+  @Nullable
   Integer max();
+  @Nullable
   Long count();
 }
