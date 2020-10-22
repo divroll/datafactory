@@ -28,12 +28,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jetbrains.exodus.bindings.ComparableBinding;
 import jetbrains.exodus.entitystore.PersistentEntityStore;
 import jetbrains.exodus.entitystore.PersistentEntityStoreConfig;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
+import jetbrains.exodus.entitystore.StoreTransaction;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
 import jetbrains.exodus.env.Environment;
 import jetbrains.exodus.env.EnvironmentConfig;
@@ -187,5 +189,22 @@ public final class DatabaseManagerImpl implements DatabaseManager {
       return matcher.group(1);
     }
     return null;
+  }
+
+  public static <T, E extends Exception> Consumer<T> consumerWrapper(
+      Consumer<T> consumer, Class<E> clazz) {
+    return i -> {
+      try {
+        consumer.accept(i);
+      } catch (Exception ex) {
+        try {
+          E exCast = clazz.cast(ex);
+          System.err.println(
+              "Exception occured : " + exCast.getMessage());
+        } catch (ClassCastException ccEx) {
+          throw ex;
+        }
+      }
+    };
   }
 }

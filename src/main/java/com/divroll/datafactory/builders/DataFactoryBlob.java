@@ -47,6 +47,7 @@ public interface DataFactoryBlob extends Serializable {
     return false;
   }
 
+  @Nullable
   Long count();
 
 }

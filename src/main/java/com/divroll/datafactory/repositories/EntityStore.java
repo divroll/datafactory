@@ -20,6 +20,7 @@ import com.divroll.datafactory.builders.DataFactoryEntities;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.DataFactoryProperty;
 import com.divroll.datafactory.builders.queries.EntityQuery;
+import com.divroll.datafactory.exceptions.DataFactoryException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -34,16 +35,16 @@ import org.jetbrains.annotations.NotNull;
 public interface EntityStore extends Remote {
 
   Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, DataFactoryException, NotBoundException, RemoteException;
 
   Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   Optional<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   Optional<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   /**
    * Remove entities matching the query
@@ -53,7 +54,7 @@ public interface EntityStore extends Remote {
    * @throws NotBoundException
    * @throws RemoteException
    */
-  Boolean removeEntity(@NotNull EntityQuery query) throws NotBoundException, RemoteException;
+  Boolean removeEntity(@NotNull EntityQuery query) throws DataFactoryException, NotBoundException, RemoteException;
 
   /**
    * Remove entities matching the list of queries
@@ -64,14 +65,14 @@ public interface EntityStore extends Remote {
    * @throws RemoteException
    */
   Boolean removeEntities(@NotNull EntityQuery[] queries)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   Boolean saveProperty(@NotNull DataFactoryProperty property)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   Boolean removeProperty(@NotNull DataFactoryProperty property)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   Boolean removeEntityType(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException;
+      throws DataFactoryException, NotBoundException, RemoteException;
 }

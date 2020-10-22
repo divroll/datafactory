@@ -37,7 +37,7 @@ public interface BlobQuery extends Serializable {
    */
   @Value.Default
   default Boolean include() {
-    return false;
+    return true;
   }
 
 }

@@ -21,14 +21,16 @@ import com.divroll.datafactory.Marshaller;
 import com.divroll.datafactory.Unmarshaller;
 import com.divroll.datafactory.actions.PropertyRemoveAction;
 import com.divroll.datafactory.actions.PropertyRenameAction;
-import com.divroll.datafactory.builders.DataFactoryEntitiesBuilder;
-import com.divroll.datafactory.builders.queries.EntityQuery;
-import com.divroll.datafactory.builders.queries.BlobQuery;
 import com.divroll.datafactory.builders.DataFactoryEntities;
-import com.divroll.datafactory.builders.DataFactoryProperty;
-import com.divroll.datafactory.builders.queries.LinkQuery;
+import com.divroll.datafactory.builders.DataFactoryEntitiesBuilder;
 import com.divroll.datafactory.builders.DataFactoryEntity;
+import com.divroll.datafactory.builders.DataFactoryProperty;
+import com.divroll.datafactory.builders.queries.BlobQuery;
+import com.divroll.datafactory.builders.queries.EntityQuery;
+import com.divroll.datafactory.builders.queries.LinkQuery;
+import com.divroll.datafactory.conditions.UnsatisfiedCondition;
 import com.divroll.datafactory.database.DatabaseManager;
+import com.divroll.datafactory.exceptions.DataFactoryException;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import com.divroll.datafactory.repositories.EntityStore;
@@ -37,6 +39,7 @@ import com.godaddy.logging.LoggerFactory;
 import com.google.common.collect.FluentIterable;
 import com.healthmarketscience.rmiio.RemoteInputStreamClient;
 import io.vavr.control.Try;
+import java.io.InputStream;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -56,6 +59,9 @@ import jetbrains.exodus.entitystore.PersistentStoreTransaction;
 import org.jetbrains.annotations.NotNull;
 import util.ComparableHashMap;
 
+import static com.divroll.datafactory.Unmarshaller.processUnsatisfiedConditions;
+import static com.divroll.datafactory.Unmarshaller.processActions;
+
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
@@ -68,18 +74,19 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
   private DatabaseManager manager;
 
   public EntityStoreImpl(DatabaseManager databaseManager)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     this.manager = databaseManager;
   }
 
   @Override public Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     DataFactoryEntities dataFactoryEntities = saveEntities(new DataFactoryEntity[] {entity}).get();
     return dataFactoryEntities.entities().stream().findFirst();
   }
 
-  @Override public Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
-      throws NotBoundException, RemoteException {
+  @Override
+  public Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
+      throws DataFactoryException, NotBoundException, RemoteException {
     Map<String, List<DataFactoryEntity>> envIdOrderedEntities = sort(entities);
     Iterator<String> it = envIdOrderedEntities.keySet().iterator();
     AtomicReference<DataFactoryEntities> finalResult = new AtomicReference<>(null);
@@ -87,6 +94,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
       String dir = it.next();
       List<DataFactoryEntity> dataFactoryEntityList = envIdOrderedEntities.get(dir);
       manager.transactPersistentEntityStore(dir, false, txn -> {
+
         List<DataFactoryEntity> resultEntities = new ArrayList<>();
         dataFactoryEntityList.forEach(entity -> {
 
@@ -105,14 +113,20 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
               Unmarshaller.filterContext(reference, entity.filters(), entity.entityType(), txn));
 
           /**
+           * Process entity conditions, if there are no {@linkplain UnsatisfiedCondition}
+           * process the actions, blobs and properties
+           */
+          processUnsatisfiedConditions(entity.conditions(), entityInContext, txn);
+
+          /**
            * Process entity actions within the context of the {@linkplain Entity}
            */
-          if (entity.entityActions() != null) {
-            Unmarshaller.processActions(entity, reference, entityInContext, txn);
-          }
+          processActions(entity, reference, entityInContext, txn);
+
           entity.blobs().forEach(remoteBlob -> {
-            entityInContext.setBlob(remoteBlob.blobName(),
-                Try.of(() -> RemoteInputStreamClient.wrap(remoteBlob.blobStream())).getOrNull());
+            InputStream blobStream =
+                Try.of(() -> RemoteInputStreamClient.wrap(remoteBlob.blobStream())).getOrNull();
+            entityInContext.setBlob(remoteBlob.blobName(), blobStream);
           });
 
           /**
@@ -127,7 +141,8 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
             entityInContext.setProperty(key, value);
           }
 
-          resultEntities.add(new Marshaller().with(entityInContext)
+          resultEntities.add(new Marshaller()
+              .with(entityInContext)
               .build());
         });
         finalResult.set(new DataFactoryEntitiesBuilder()
@@ -139,7 +154,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
   }
 
   @Override public Optional<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     Optional<DataFactoryEntities> optional = getEntities(query);
     if (optional.isPresent()) {
       return optional.get().entities().stream().findFirst();
@@ -150,10 +165,10 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
 
   @Override
   public Optional<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
 
     String dir = query.environment();
-    String entityType = query.entityType();
+    AtomicReference<String> entityType = new AtomicReference<>(query.entityType());
     String nameSpace = query.nameSpace();
 
     List<DataFactoryEntity> remoteEntities = new ArrayList<>();
@@ -163,15 +178,15 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
     manager.transactPersistentEntityStore(dir, true, txn -> {
 
       AtomicReference<EntityIterable> result = null;
-      if (nameSpace != null && !nameSpace.isEmpty() && entityType != null) {
-        result.set(txn.findWithProp(entityType, Constants.NAMESPACE_PROPERTY)
-            .intersect(txn.find(entityType, Constants.NAMESPACE_PROPERTY, nameSpace)));
-      } else if (entityType != null) {
-        result.set(txn.getAll(entityType)
-            .minus(txn.findWithProp(entityType, Constants.NAMESPACE_PROPERTY)));
+      if (nameSpace != null && !nameSpace.isEmpty() && entityType.get() != null) {
+        result.set(txn.findWithProp(entityType.get(), Constants.NAMESPACE_PROPERTY)
+            .intersect(txn.find(entityType.get(), Constants.NAMESPACE_PROPERTY, nameSpace)));
+      } else if (entityType.get() != null) {
+        result.set(txn.getAll(entityType.get())
+            .minus(txn.findWithProp(entityType.get(), Constants.NAMESPACE_PROPERTY)));
       }
 
-      if (query.entityId() == null && entityType == null) {
+      if (query.entityId() == null && entityType.get() == null) {
         throw new IllegalArgumentException("Either entity ID or entity type must be present");
       }
 
@@ -179,6 +194,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
         // Query by id encompasses name spacing
         EntityId idOfEntity = txn.toEntityId(query.entityId());
         final Entity entity = txn.getEntity(idOfEntity);
+        entityType.set(entity.getType());
         remoteEntities.add(new Marshaller().with(entity)
             .with(FluentIterable.from(query.blobQueries()).toArray(BlobQuery.class))
             .with(FluentIterable.from(query.linkQueries()).toArray(LinkQuery.class))
@@ -186,7 +202,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
         count.set(1L);
       } else {
         result.set(
-            Unmarshaller.filterContext(result, query.filters(), entityType, txn));
+            Unmarshaller.filterContext(result, query.filters(), entityType.get(), txn));
         count.set(result.get().count());
         result.set(result.get()
             .skip(query.offset().intValue())
@@ -226,12 +242,12 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
   }
 
   @Override public Boolean removeEntity(@NotNull EntityQuery query)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     return removeEntities(new EntityQuery[] {query});
   }
 
   @Override public Boolean removeEntities(@NotNull EntityQuery[] queries)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     final boolean[] success = {false};
 
     Map<String, List<EntityQuery>> dirOrderedQueries = sort(queries);
@@ -290,7 +306,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
   }
 
   @Override public Boolean saveProperty(@NotNull DataFactoryProperty property)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     String dir = property.environment();
     String entityType = property.entityType();
     String nameSpace = property.nameSpace();
@@ -329,7 +345,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
   }
 
   @Override public Boolean removeProperty(@NotNull DataFactoryProperty property)
-      throws NotBoundException, RemoteException {
+      throws DataFactoryException, NotBoundException, RemoteException {
     String dir = property.environment();
     String entityType = property.entityType();
     String nameSpace = property.nameSpace();

@@ -39,7 +39,7 @@ public class DataFactoryClient {
   public DataFactoryClient getInstance() {
     if(instance == null) {
       instance = new DataFactoryClient();
-      entityStore = new EntityStoreClientImpl(DEFAULT_PORT);
+      entityStore = new EntityStoreClientImpl("localhost", DEFAULT_PORT);
     }
     return instance;
   }

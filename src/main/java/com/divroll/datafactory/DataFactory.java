@@ -18,6 +18,7 @@ package com.divroll.datafactory;
 
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.database.impl.DatabaseManagerImpl;
+import com.divroll.datafactory.exceptions.DataFactoryException;
 import com.divroll.datafactory.repositories.EntityStore;
 import com.divroll.datafactory.repositories.impl.EntityStoreImpl;
 import com.godaddy.logging.Logger;
@@ -65,12 +66,16 @@ public class DataFactory {
   public static DataFactory getInstance() {
     if (instance == null) {
       instance = new DataFactory();
-      System.setProperty("java.rmi.server.hostname", "localhost");
-      String port = System.getProperty("java.rmi.server.port", "1099");
+      String host = System.getProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT);
+      if (host == null) {
+        System.setProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT, "localhost");
+      }
+      String port =
+          System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
       if (port != null) {
         registry = LocateRegistry.createRegistry(Integer.valueOf(port));
       } else {
-        registry = LocateRegistry.createRegistry(1099);
+        registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
       }
       String process = ManagementFactory.getRuntimeMXBean().getName();
       LOG.debug("DataFactory initialized with process id: " + process);
@@ -98,7 +103,8 @@ public class DataFactory {
     return this;
   }
 
-  public EntityStore getEntityStore() throws RemoteException, NotBoundException {
+  public EntityStore getEntityStore()
+      throws DataFactoryException, RemoteException, NotBoundException {
     if (entityStore == null) {
       entityStore = new EntityStoreImpl(DatabaseManagerImpl.getInstance());
     }

@@ -3,8 +3,8 @@
 ## What is DataFactory?
 
 DataFactory is a thin abstraction library to Jetbrains Xodus database with a fluent API. It allows 
-the "managed" access to the underlying Xodus database through consistent Java API that works both
-in embedded and in remote through Java RMI. 
+a _managed_ access to the underlying database through consistent Java API that works both
+in an embedded or in a remote context through Java RMI. 
 
 **Requirements:** JDK 7, Maven
 
@@ -25,9 +25,8 @@ Installation
 $mvn clean install
 ```
 
-and add to your project dependency: 
-
-```$xslt
+#### Maven
+```xml
 <dependency>
     <groupId>com.divroll</groupId>
     <artifactId>datafactory</artifactId>

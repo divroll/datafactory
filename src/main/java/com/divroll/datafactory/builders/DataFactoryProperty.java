@@ -34,7 +34,7 @@ public interface DataFactoryProperty extends Serializable {
 
   @Value.Default
   default String environment() {
-    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT_VARIABLE);
+    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT);
   }
 
   String entityType();

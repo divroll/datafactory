@@ -29,9 +29,21 @@ import com.divroll.datafactory.actions.PropertyIndexAction;
 import com.divroll.datafactory.actions.PropertyRemoveAction;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.TransactionFilter;
+import com.divroll.datafactory.conditions.EntityCondition;
+import com.divroll.datafactory.conditions.LinkCondition;
+import com.divroll.datafactory.conditions.OppositeLinkCondition;
+import com.divroll.datafactory.conditions.PropertyEqualCondition;
+import com.divroll.datafactory.conditions.PropertyLocalTimeRangeCondition;
+import com.divroll.datafactory.conditions.PropertyMinMaxCondition;
+import com.divroll.datafactory.conditions.PropertyNearbyCondition;
+import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
+import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
+import com.google.common.collect.Range;
 import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jetbrains.exodus.entitystore.Entity;
 import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
@@ -65,30 +77,140 @@ public class Unmarshaller {
     throw new IllegalArgumentException("Not yet implemented");
   }
 
-  public static Entity buildContexedEntity(DataFactoryEntity entity,
-      AtomicReference<EntityIterable> referenceToScope, StoreTransaction txn) {
-    if (entity.nameSpace() != null) {
+  public static Entity buildContexedEntity(@NotNull DataFactoryEntity entity,
+      @NotNull AtomicReference<EntityIterable> referenceToScope, @NotNull StoreTransaction txn) {
+
+    if (entity.nameSpace() != null && entity.entityType() != null) {
       referenceToScope.set(
           txn.getAll(entity.entityType())
               .intersect(
                   txn.find(entity.entityType(), Constants.NAMESPACE_PROPERTY,
                       entity.nameSpace())));
-    } else {
+    } else if (entity.entityType() != null) {
       referenceToScope.set(txn.getAll(entity.entityType()));
     }
 
     final Entity entityInContext = entity.entityId() != null ?
         txn.getEntity(txn.toEntityId(entity.entityId())) : txn.newEntity(entity.entityType());
-    if (referenceToScope.get().indexOf(entityInContext) == -1 && entity.nameSpace() != null) {
+    if (referenceToScope.get() != null
+        && referenceToScope.get().indexOf(entityInContext) == -1
+        && entity.nameSpace() != null) {
       throw new IllegalArgumentException(
           "Entity " + entity.entityId() + " not found in namespace " + entity.nameSpace());
     }
     return entityInContext;
   }
 
-  public static Entity processActions(DataFactoryEntity dataFactoryEntity,
-      AtomicReference<EntityIterable> reference, Entity entityInContext, StoreTransaction txn) {
-    dataFactoryEntity.entityActions().forEach(
+  /**
+   * Process conditions without modifying the {@linkplain Entity} with the main function throw a
+   * {@linkplain UnsatisfiedConditionException} when condition is not met with the context of the
+   * {@linkplain Entity}
+   *
+   * @param conditions
+   * @param entityInContext
+   * @throws UnsatisfiedConditionException
+   */
+  public static void processUnsatisfiedConditions(
+      @NotNull List<EntityCondition> conditions,
+      @NotNull Entity entityInContext, @NotNull StoreTransaction txn)
+      throws UnsatisfiedConditionException {
+    //conditions.forEach(consumerWrapper(entityCondition -> {
+    //  throw new UnsatisfiedConditionException(entityCondition);
+    //}, UnsatisfiedConditionException.class));
+    for (int i = 0; i < conditions.size(); i++) {
+      EntityCondition entityCondition = conditions.get(i);
+      if (entityCondition instanceof LinkCondition) {
+        LinkCondition linkCondition = (LinkCondition) entityCondition;
+        String linkName = linkCondition.linkName();
+        String otherEntityId = linkCondition.otherEntityId();
+        Boolean isSet = linkCondition.isSet();
+        if (isSet) {
+          Entity otherEntity = entityInContext.getLink(linkName);
+          if (otherEntity == null) {
+            throw new UnsatisfiedConditionException(entityCondition);
+          } else if (otherEntity != null && !otherEntity.getId()
+              .toString()
+              .equals(otherEntityId)) {
+            throw new UnsatisfiedConditionException(entityCondition);
+          }
+        } else {
+          if (entityInContext.getLinks(linkName).isEmpty()) {
+            throw new UnsatisfiedConditionException(entityCondition);
+          }
+        }
+      } else if (entityCondition instanceof OppositeLinkCondition) {
+        OppositeLinkCondition oppositeLinkCondition = (OppositeLinkCondition) entityCondition;
+        String linkName = oppositeLinkCondition.linkName();
+        String oppositeLinkName = oppositeLinkCondition.oppositeLinkName();
+        String oppositeEntityId = oppositeLinkCondition.oppositeEntityId();
+        Boolean isSet = oppositeLinkCondition.isSet();
+        Entity oppositeEntity = entityInContext.getStore()
+            .getCurrentTransaction()
+            .getEntity(txn.toEntityId(oppositeEntityId));
+
+        if (entityInContext.getLinks(linkName).isEmpty()) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
+
+        if (oppositeEntity == null) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
+
+        if (oppositeEntity.getLinks(oppositeLinkName).isEmpty()) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        } else if (oppositeEntity.getLinks(linkName).size() > 1 && isSet) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
+      } else if (entityCondition instanceof PropertyEqualCondition) {
+        PropertyEqualCondition equalCondition = (PropertyEqualCondition) entityCondition;
+        String propertyName = equalCondition.propertyName();
+        Comparable expectedPropertyValue = equalCondition.propertyValue();
+        Comparable propertyValue = entityInContext.getProperty(propertyName);
+        if (!expectedPropertyValue.equals(propertyValue)) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
+      } else if (entityCondition instanceof PropertyLocalTimeRangeCondition) {
+        PropertyLocalTimeRangeCondition localTimeRangeCondition =
+            (PropertyLocalTimeRangeCondition) entityCondition;
+        throw new IllegalArgumentException("Not yet implemented");
+      } else if (entityCondition instanceof PropertyMinMaxCondition) {
+        PropertyMinMaxCondition minMaxCondition = (PropertyMinMaxCondition) entityCondition;
+        String propertyName = minMaxCondition.propertyName();
+        Comparable minValue = minMaxCondition.minValue();
+        Comparable maxValue = minMaxCondition.maxValue();
+        Comparable propertyValue = entityInContext.getProperty(propertyName);
+        Range<Comparable> range = Range.closed(minValue, maxValue);
+        if (!range.contains(propertyName)) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
+      } else if (entityCondition instanceof PropertyNearbyCondition) {
+        PropertyNearbyCondition nearbyCondition = (PropertyNearbyCondition) entityCondition;
+        throw new IllegalArgumentException("Not yet implemented");
+      } else if (entityCondition instanceof PropertyStartsWithCondition) {
+        PropertyStartsWithCondition startsWithCondition =
+            (PropertyStartsWithCondition) entityCondition;
+        String propertyName = startsWithCondition.propertyName();
+        String startsWith = startsWithCondition.startsWith();
+        Comparable propertyValue = entityInContext.getProperty(propertyName);
+        if (!String.class.isAssignableFrom(propertyValue.getClass())) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        } else {
+          String stringProperty = (String) propertyValue;
+          if (!stringProperty.startsWith(startsWith)) {
+            throw new UnsatisfiedConditionException(entityCondition);
+          }
+        }
+      } else {
+        throw new IllegalArgumentException(
+            "Invalid condition " + entityCondition.getClass().getName());
+      }
+    }
+  }
+
+  public static Entity processActions(@NotNull DataFactoryEntity dataFactoryEntity,
+      @NotNull AtomicReference<EntityIterable> reference, @NotNull Entity entityInContext,
+      @NotNull StoreTransaction txn) {
+    dataFactoryEntity.actions().forEach(
         action -> {
           if (action instanceof LinkAction) {
             LinkAction linkAction = (LinkAction) action;
@@ -183,10 +305,13 @@ public class Unmarshaller {
             String replacement = blobRenameRegexAction.replacement();
             String regexPattern = blobRenameRegexAction.regexPattern();
             entityInContext.getBlobNames().forEach(blobName -> {
-              InputStream blobStream = entityInContext.getBlob(blobName);
-              entityInContext.deleteBlob(blobName);
-              blobName = blobName.replaceAll(regexPattern, replacement);
-              entityInContext.setBlob(blobName, blobStream);
+              Pattern pattern = Pattern.compile(regexPattern);
+              Matcher matcher = pattern.matcher(blobName);
+              if (matcher.matches()) {
+                InputStream blobStream = entityInContext.getBlob(blobName);
+                entityInContext.deleteBlob(blobName);
+                entityInContext.setBlob(replacement, blobStream);
+              }
             });
           } else if (action instanceof BlobRemoveAction) {
             BlobRemoveAction blobRemoveAction = (BlobRemoveAction) action;

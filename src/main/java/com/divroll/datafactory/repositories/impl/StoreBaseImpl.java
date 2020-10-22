@@ -110,7 +110,7 @@ public abstract class StoreBaseImpl<T> extends UnicastRemoteObject {
   }
 
   protected String dataFactoryDir() {
-    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT_VARIABLE);
+    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT);
   }
 
 }

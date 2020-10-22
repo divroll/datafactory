@@ -18,6 +18,8 @@ package com.divroll.datafactory.builders;
 
 import com.divroll.datafactory.Constants;
 import com.divroll.datafactory.actions.EntityAction;
+import com.divroll.datafactory.conditions.EntityCondition;
+import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,11 +37,20 @@ import org.immutables.value.Value;
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
 public interface DataFactoryEntity extends Serializable {
 
-  @Value.Default
-  default String environment() {
-    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT_VARIABLE);
+  @Value.Check
+  default DataFactoryEntity check() {
+    Preconditions.checkState(
+        !((entityType() == null || entityType().isEmpty()) && (entityId() == null || entityId().isEmpty()))
+    , "Should have at least either an Entity Type or ID");
+    return this;
   }
 
+  @Value.Default
+  default String environment() {
+    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT);
+  }
+
+  @Nullable
   String entityType();
 
   @Nullable
@@ -79,7 +90,7 @@ public interface DataFactoryEntity extends Serializable {
 
   @Nullable
   @Value.Default
-  default List<EntityAction> entityActions() {
+  default List<EntityAction> actions() {
     return new ArrayList<>();
   }
 
@@ -88,4 +99,11 @@ public interface DataFactoryEntity extends Serializable {
   default List<TransactionFilter> filters() {
     return new ArrayList<>();
   }
+
+  @Nullable
+  @Value.Default
+  default List<EntityCondition> conditions() {
+    return new ArrayList<>();
+  }
+
 }
