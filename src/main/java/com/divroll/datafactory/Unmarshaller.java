@@ -19,6 +19,7 @@ package com.divroll.datafactory;
 import com.divroll.datafactory.actions.BlobRemoveAction;
 import com.divroll.datafactory.actions.BlobRenameAction;
 import com.divroll.datafactory.actions.BlobRenameRegexAction;
+import com.divroll.datafactory.actions.CustomAction;
 import com.divroll.datafactory.actions.LinkAction;
 import com.divroll.datafactory.actions.LinkNewEntityAction;
 import com.divroll.datafactory.actions.LinkRemoveAction;
@@ -40,6 +41,7 @@ import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
 import com.google.common.collect.Range;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -346,6 +348,9 @@ public class Unmarshaller {
             PropertyRemoveAction propertyRemoveAction = (PropertyRemoveAction) action;
             String propertyName = propertyRemoveAction.propertyName();
             entityInContext.deleteProperty(propertyName);
+          } else if(action instanceof CustomAction) {
+            CustomAction customAction = (CustomAction) action;
+            customAction.execute(entityInContext);
           } else {
             throw new IllegalArgumentException("Invalid entity action");
           }
@@ -393,4 +398,5 @@ public class Unmarshaller {
     });
     return reference.get();
   }
+
 }
