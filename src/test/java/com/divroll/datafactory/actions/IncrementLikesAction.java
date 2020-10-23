@@ -32,7 +32,8 @@ public class IncrementLikesAction implements CustomAction {
   }
 
   @Override public void execute(Entity entityInContext) {
-    Integer likes = (Integer) entityInContext.getProperty("likes");
+    Integer likes = entityInContext.getProperty("likes") != null
+        ? (Integer) entityInContext.getProperty("likes") : 0;
     likes = likes + incrementValue;
     entityInContext.setProperty("likes", likes);
   }
