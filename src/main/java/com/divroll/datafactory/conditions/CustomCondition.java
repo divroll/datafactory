@@ -14,17 +14,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.exceptions;
+package com.divroll.datafactory.conditions;
 
-import com.divroll.datafactory.conditions.EntityCondition;
+import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
+import jetbrains.exodus.entitystore.Entity;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class UnsatisfiedConditionException extends DataFactoryException {
-  public UnsatisfiedConditionException(EntityCondition condition) {
-   super("The condition " + condition.getClass().getName() + " was not satisfied");
-  }
+public interface CustomCondition extends EntityCondition {
+  void execute(Entity entityInContext) throws UnsatisfiedConditionException;
 }

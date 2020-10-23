@@ -18,6 +18,7 @@ package com.divroll.datafactory.database.impl;
 
 import com.divroll.datafactory.bindings.EmbeddedEntityBinding;
 import com.divroll.datafactory.database.DatabaseManager;
+import com.divroll.datafactory.exceptions.ThrowingConsumer;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import com.godaddy.logging.Logger;
@@ -35,7 +36,6 @@ import jetbrains.exodus.bindings.ComparableBinding;
 import jetbrains.exodus.entitystore.PersistentEntityStore;
 import jetbrains.exodus.entitystore.PersistentEntityStoreConfig;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
-import jetbrains.exodus.entitystore.StoreTransaction;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
 import jetbrains.exodus.env.Environment;
 import jetbrains.exodus.env.EnvironmentConfig;
@@ -192,17 +192,18 @@ public final class DatabaseManagerImpl implements DatabaseManager {
   }
 
   public static <T, E extends Exception> Consumer<T> consumerWrapper(
-      Consumer<T> consumer, Class<E> clazz) {
+      ThrowingConsumer<T> consumer, Class<E> clazz) {
     return i -> {
       try {
         consumer.accept(i);
       } catch (Exception ex) {
+        ex.printStackTrace();
         try {
           E exCast = clazz.cast(ex);
           System.err.println(
-              "Exception occured : " + exCast.getMessage());
+              "Exception occurred : " + exCast.getMessage());
         } catch (ClassCastException ccEx) {
-          throw ex;
+          //throw ex;
         }
       }
     };

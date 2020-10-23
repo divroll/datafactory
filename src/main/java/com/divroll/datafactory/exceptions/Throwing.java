@@ -16,15 +16,28 @@
  */
 package com.divroll.datafactory.exceptions;
 
-import com.divroll.datafactory.conditions.EntityCondition;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class UnsatisfiedConditionException extends DataFactoryException {
-  public UnsatisfiedConditionException(EntityCondition condition) {
-   super("The condition " + condition.getClass().getName() + " was not satisfied");
+public final class Throwing {
+
+  private Throwing() {}
+
+  @Nonnull
+  public static <T> Consumer<T> rethrow(@Nonnull final ThrowingConsumer<T> consumer) {
+    return consumer;
   }
+
+  @SuppressWarnings("unchecked")
+  @Nonnull
+  public static <E extends Throwable> void sneakyThrow(@Nonnull Throwable ex) throws E {
+    throw (E) ex;
+  }
+
 }

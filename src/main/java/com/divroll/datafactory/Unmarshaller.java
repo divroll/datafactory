@@ -30,6 +30,7 @@ import com.divroll.datafactory.actions.PropertyIndexAction;
 import com.divroll.datafactory.actions.PropertyRemoveAction;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.TransactionFilter;
+import com.divroll.datafactory.conditions.CustomCondition;
 import com.divroll.datafactory.conditions.EntityCondition;
 import com.divroll.datafactory.conditions.LinkCondition;
 import com.divroll.datafactory.conditions.OppositeLinkCondition;
@@ -41,7 +42,6 @@ import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
 import com.google.common.collect.Range;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -51,6 +51,8 @@ import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.StoreTransaction;
 import org.jetbrains.annotations.NotNull;
+
+import static com.divroll.datafactory.exceptions.Throwing.rethrow;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -116,11 +118,7 @@ public class Unmarshaller {
       @NotNull List<EntityCondition> conditions,
       @NotNull Entity entityInContext, @NotNull StoreTransaction txn)
       throws UnsatisfiedConditionException {
-    //conditions.forEach(consumerWrapper(entityCondition -> {
-    //  throw new UnsatisfiedConditionException(entityCondition);
-    //}, UnsatisfiedConditionException.class));
-    for (int i = 0; i < conditions.size(); i++) {
-      EntityCondition entityCondition = conditions.get(i);
+    conditions.forEach(rethrow(entityCondition -> {
       if (entityCondition instanceof LinkCondition) {
         LinkCondition linkCondition = (LinkCondition) entityCondition;
         String linkName = linkCondition.linkName();
@@ -182,7 +180,7 @@ public class Unmarshaller {
         Comparable maxValue = minMaxCondition.maxValue();
         Comparable propertyValue = entityInContext.getProperty(propertyName);
         Range<Comparable> range = Range.closed(minValue, maxValue);
-        if (!range.contains(propertyName)) {
+        if (!range.contains(propertyValue)) {
           throw new UnsatisfiedConditionException(entityCondition);
         }
       } else if (entityCondition instanceof PropertyNearbyCondition) {
@@ -202,11 +200,14 @@ public class Unmarshaller {
             throw new UnsatisfiedConditionException(entityCondition);
           }
         }
+      } else if(entityCondition instanceof CustomCondition) {
+        CustomCondition customCondition = (CustomCondition) entityCondition;
+        customCondition.execute(entityInContext);
       } else {
         throw new IllegalArgumentException(
             "Invalid condition " + entityCondition.getClass().getName());
       }
-    }
+    }));
   }
 
   public static Entity processActions(@NotNull DataFactoryEntity dataFactoryEntity,

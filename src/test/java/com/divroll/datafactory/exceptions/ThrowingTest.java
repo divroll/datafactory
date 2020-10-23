@@ -16,15 +16,34 @@
  */
 package com.divroll.datafactory.exceptions;
 
-import com.divroll.datafactory.conditions.EntityCondition;
+import java.io.IOException;
+import java.util.Arrays;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static com.divroll.datafactory.exceptions.Throwing.rethrow;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class UnsatisfiedConditionException extends DataFactoryException {
-  public UnsatisfiedConditionException(EntityCondition condition) {
-   super("The condition " + condition.getClass().getName() + " was not satisfied");
+public class ThrowingTest {
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
+  @Test
+  public void testRethrow() {
+    thrown.expect(IOException.class);
+    thrown.expectMessage("i=3");
+
+    Arrays.asList(1, 2, 3).forEach(rethrow(e -> {
+      int i = e.intValue();
+      if (i == 3) {
+        throw new IOException("i=" + i);
+      }
+    }));
   }
+
 }
