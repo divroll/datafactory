@@ -16,36 +16,47 @@
  */
 package com.divroll.datafactory;
 
+import com.divroll.datafactory.repositories.EntityStore;
+import com.divroll.datafactory.repositories.impl.EntityStoreClientImpl;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-import com.divroll.datafactory.repositories.EntityStore;
-import com.divroll.datafactory.repositories.impl.EntityStoreClientImpl;
-
 public class DataFactoryClient {
 
   private static DataFactoryClient instance;
-  private static final Integer DEFAULT_PORT = 1099;
+  private static final String DEFAULT_HOST = "localhost";
+  private static final String DEFAULT_PORT = "1099";
   private EntityStore entityStore;
 
   private DataFactoryClient() {
-    if (instance != null) {
-      throw new RuntimeException("Only one instance of DataFactoryClient is allowed");
-    }
   }
 
-  public DataFactoryClient getInstance() {
-    if(instance == null) {
-      instance = new DataFactoryClient();
-      entityStore = new EntityStoreClientImpl("localhost", DEFAULT_PORT);
+  public DataFactoryClient(EntityStore entityStore) {
+    this.entityStore = entityStore;
+  }
+
+  public static DataFactoryClient getInstance() {
+    String host = System.getProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT);
+    if (host == null) {
+      host = System.setProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT, DEFAULT_HOST);
     }
+    String port =
+        System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
+    return getInstance(host, port);
+  }
+
+  public static DataFactoryClient getInstance(@NotNull String host, @NotNull String port) {
+    EntityStore entityStore = new EntityStoreClientImpl(host != null ? host : DEFAULT_HOST,
+        Integer.valueOf(port != null ? port : DEFAULT_PORT));
+    DataFactoryClient instance = new DataFactoryClient(entityStore);
     return instance;
   }
 
   public EntityStore getEntityStore() {
     return entityStore;
   }
-
 }
