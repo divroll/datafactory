@@ -59,6 +59,7 @@ import jetbrains.exodus.entitystore.PersistentStoreTransaction;
 import org.jetbrains.annotations.NotNull;
 import util.ComparableHashMap;
 
+import static com.divroll.datafactory.Unmarshaller.processConditions;
 import static com.divroll.datafactory.Unmarshaller.processUnsatisfiedConditions;
 import static com.divroll.datafactory.Unmarshaller.processActions;
 
@@ -185,6 +186,8 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
         result.set(txn.getAll(entityType.get())
             .minus(txn.findWithProp(entityType.get(), Constants.NAMESPACE_PROPERTY)));
       }
+
+      processConditions(entityType.get(), query.conditions(), result, txn);
 
       if (query.entityId() == null && entityType.get() == null) {
         throw new IllegalArgumentException("Either entity ID or entity type must be present");

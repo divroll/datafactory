@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2018, Divroll, and individual contributors
+ * Copyright 2020, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -14,23 +14,44 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory;
 
-import java.io.Serializable;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityCondition extends Serializable {
-  @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+public class GeoPoint implements Comparable<GeoPoint> {
+
+  private Double longitude;
+  private Double latitude;
+
+  public GeoPoint(Double longitude, Double latitude) {
+    setLongitude(longitude);
+    setLatitude(latitude);
+  }
+
+  @Override public int compareTo(@NotNull GeoPoint geoPoint) {
+    // TODO: Implement this method
+    return 0;
+  }
+
+  public Double getLongitude() {
+    return longitude;
+  }
+
+  public void setLongitude(Double longitude) {
+    this.longitude = longitude;
+  }
+
+  public Double getLatitude() {
+    return latitude;
+  }
+
+  public void setLatitude(Double latitude) {
+    this.latitude = latitude;
+  }
+
 }

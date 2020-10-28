@@ -19,6 +19,7 @@ package com.divroll.datafactory.builders.queries;
 import com.divroll.datafactory.Constants;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.TransactionFilter;
+import com.divroll.datafactory.conditions.EntityCondition;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,9 +93,16 @@ public interface EntityQuery extends Serializable {
     return false;
   }
 
+  @Deprecated
   @Nullable
   @Value.Default
   default List<TransactionFilter> filters() {
+    return new ArrayList<>();
+  }
+
+  @Nullable
+  @Value.Default
+  default List<EntityCondition> conditions() {
     return new ArrayList<>();
   }
 

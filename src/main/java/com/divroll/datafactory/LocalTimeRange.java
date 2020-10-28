@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2018, Divroll, and individual contributors
+ * Copyright 2020, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -14,23 +14,43 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory;
 
-import java.io.Serializable;
-import javax.annotation.Nullable;
+import java.time.LocalTime;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityCondition extends Serializable {
-  @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+public class LocalTimeRange implements Comparable<LocalTimeRange> {
+
+  private LocalTime lower;
+  private LocalTime upper;
+
+  public LocalTimeRange(LocalTime lower, LocalTime upper) {
+    setLower(lower);
+    setUpper(upper);
+  }
+
+  @Override public int compareTo(@NotNull LocalTimeRange localTimeRange) {
+    return 0;
+  }
+
+  public LocalTime getLower() {
+    return lower;
+  }
+
+  public void setLower(LocalTime lower) {
+    this.lower = lower;
+  }
+
+  public LocalTime getUpper() {
+    return upper;
+  }
+
+  public void setUpper(LocalTime upper) {
+    this.upper = upper;
+  }
 }

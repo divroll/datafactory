@@ -31,6 +31,7 @@ import com.divroll.datafactory.actions.PropertyRemoveAction;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.TransactionFilter;
 import com.divroll.datafactory.conditions.CustomCondition;
+import com.divroll.datafactory.conditions.CustomQueryCondition;
 import com.divroll.datafactory.conditions.EntityCondition;
 import com.divroll.datafactory.conditions.LinkCondition;
 import com.divroll.datafactory.conditions.OppositeLinkCondition;
@@ -40,8 +41,12 @@ import com.divroll.datafactory.conditions.PropertyMinMaxCondition;
 import com.divroll.datafactory.conditions.PropertyNearbyCondition;
 import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
+import com.divroll.datafactory.helpers.EntityIterables;
+import com.divroll.datafactory.helpers.MathHelper;
 import com.google.common.collect.Range;
 import java.io.InputStream;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -61,23 +66,23 @@ import static com.divroll.datafactory.exceptions.Throwing.rethrow;
  */
 public class Unmarshaller {
 
-  DataFactoryEntity entity;
+  DataFactoryEntity dataFactoryEntity;
   StoreTransaction txn;
 
   public Unmarshaller with(@NotNull DataFactoryEntity entity, StoreTransaction txn) {
-    this.entity = entity;
+    this.dataFactoryEntity = entity;
     this.txn = txn;
     return this;
   }
 
   public Entity build() {
-    if (entity == null) {
+    if (dataFactoryEntity == null) {
       new IllegalArgumentException("Must set RemoteEntity to unmarshall into Entity");
     }
-    Entity newEntity = txn.newEntity(entity.entityType());
-    AtomicReference reference = new AtomicReference<>(txn.getAll(entity.entityType()));
-    buildContexedEntity(entity, reference, txn);
-    processActions(entity, reference, newEntity, txn);
+    Entity newEntity = txn.newEntity(dataFactoryEntity.entityType());
+    AtomicReference reference = new AtomicReference<>(txn.getAll(dataFactoryEntity.entityType()));
+    buildContexedEntity(dataFactoryEntity, reference, txn);
+    processActions(dataFactoryEntity, reference, newEntity, txn);
     throw new IllegalArgumentException("Not yet implemented");
   }
 
@@ -103,6 +108,64 @@ public class Unmarshaller {
           "Entity " + entity.entityId() + " not found in namespace " + entity.nameSpace());
     }
     return entityInContext;
+  }
+
+  public static void processConditions(@NotNull String entityType,
+      @NotNull List<EntityCondition> conditions,
+      @NotNull AtomicReference<EntityIterable> referenceToScope, @NotNull StoreTransaction txn) {
+    conditions.forEach(entityCondition -> {
+      if (entityCondition instanceof PropertyEqualCondition) {
+        PropertyEqualCondition propertyEqualCondition = (PropertyEqualCondition) entityCondition;
+        String propertyName = propertyEqualCondition.propertyName();
+        Comparable propertyValue = propertyEqualCondition.propertyName();
+        referenceToScope.set(
+            referenceToScope.get().intersect(txn.find(entityType, propertyName, propertyValue)));
+      } else if (entityCondition instanceof PropertyLocalTimeRangeCondition) {
+        PropertyLocalTimeRangeCondition propertyLocalTimeRangeCondition =
+            (PropertyLocalTimeRangeCondition) entityCondition;
+        String propertyName = propertyLocalTimeRangeCondition.propertyName();
+        LocalTime upper = propertyLocalTimeRangeCondition.upper();
+        LocalTime lower = propertyLocalTimeRangeCondition.lower();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
+        List<Entity> entityList = new ArrayList<>();
+        entities.forEach(entity -> {
+          LocalTimeRange reference = (LocalTimeRange) entity.getProperty(propertyName);
+          if(MathHelper.inRange(upper, lower, reference.getUpper(), reference.getLower())) {
+            entityList.add(entity);
+          }
+        });
+        referenceToScope.set(entities);
+        referenceToScope.get().intersect(EntityIterables.build(entityList));
+      } else if (entityCondition instanceof PropertyMinMaxCondition) {
+
+      } else if (entityCondition instanceof PropertyNearbyCondition) {
+        PropertyNearbyCondition propertyNearbyCondition = (PropertyNearbyCondition) entityCondition;
+        String propertyName = propertyNearbyCondition.propertyName();
+        Double longitude = propertyNearbyCondition.longitude();
+        Double latitude = propertyNearbyCondition.latitude();
+        Double distance = propertyNearbyCondition.distance();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
+        List<Entity> entityList = new ArrayList<>();
+        entities.forEach(entity -> {
+          GeoPoint reference = (GeoPoint) entity.getProperty(propertyName);
+          double instantaneousDistance =
+              MathHelper.distFrom(latitude, longitude, reference.getLatitude(),
+                  reference.getLatitude());
+          if (distance >= instantaneousDistance) {
+            entityList.add(entity);
+          }
+        });
+        referenceToScope.set(entities);
+        referenceToScope.get().intersect(EntityIterables.build(entityList));
+      } else if (entityCondition instanceof PropertyStartsWithCondition) {
+
+      } else if (entityCondition instanceof CustomQueryCondition) {
+        CustomQueryCondition customQueryCondition = (CustomQueryCondition) entityCondition;
+        referenceToScope.set(customQueryCondition.execute(referenceToScope.get()));
+      }
+    });
   }
 
   /**
@@ -200,7 +263,7 @@ public class Unmarshaller {
             throw new UnsatisfiedConditionException(entityCondition);
           }
         }
-      } else if(entityCondition instanceof CustomCondition) {
+      } else if (entityCondition instanceof CustomCondition) {
         CustomCondition customCondition = (CustomCondition) entityCondition;
         customCondition.execute(entityInContext);
       } else {
@@ -349,7 +412,7 @@ public class Unmarshaller {
             PropertyRemoveAction propertyRemoveAction = (PropertyRemoveAction) action;
             String propertyName = propertyRemoveAction.propertyName();
             entityInContext.deleteProperty(propertyName);
-          } else if(action instanceof CustomAction) {
+          } else if (action instanceof CustomAction) {
             CustomAction customAction = (CustomAction) action;
             customAction.execute(entityInContext);
           } else {
@@ -399,5 +462,4 @@ public class Unmarshaller {
     });
     return reference.get();
   }
-
 }

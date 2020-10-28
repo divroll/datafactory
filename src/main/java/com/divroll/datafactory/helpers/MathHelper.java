@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2018, Divroll, and individual contributors
+ * Copyright 2020, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -14,23 +14,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory.helpers;
 
-import java.io.Serializable;
-import javax.annotation.Nullable;
+import java.time.LocalTime;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityCondition extends Serializable {
-  @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+public class MathHelper {
+  public static double distFrom(double lat1, double lng1, double lat2, double lng2) {
+    throw new IllegalArgumentException("Not yet implemented");
+  }
+  public static boolean inRange(LocalTime upper1, LocalTime lower1, LocalTime upper2, LocalTime lower2) {
+    throw new IllegalArgumentException("Not yet implemented");
+  }
 }

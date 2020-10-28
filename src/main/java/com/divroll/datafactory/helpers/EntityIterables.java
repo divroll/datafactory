@@ -21,6 +21,8 @@ import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jetbrains.exodus.entitystore.Entity;
+import jetbrains.exodus.entitystore.EntityIterable;
 import util.ComparableHashMap;
 import util.ComparableLinkedList;
 
@@ -83,4 +85,9 @@ public class EntityIterables {
     }
     return entityIterable[0];
   }
+
+  public static EntityIterable build(List<Entity> entities) {
+    throw new IllegalArgumentException("Not yet implemented");
+  }
+
 }

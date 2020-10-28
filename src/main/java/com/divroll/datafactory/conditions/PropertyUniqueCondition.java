@@ -16,21 +16,16 @@
  */
 package com.divroll.datafactory.conditions;
 
-import java.io.Serializable;
-import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityCondition extends Serializable {
-  @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+@Value.Immutable
+@Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
+public interface PropertyUniqueCondition extends EntityCondition {
+  String propertyName();
+  Comparable propertyValue();
 }

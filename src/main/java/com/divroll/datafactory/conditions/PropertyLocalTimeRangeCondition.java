@@ -26,7 +26,7 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface PropertyLocalTimeRangeCondition {
+public interface PropertyLocalTimeRangeCondition extends EntityCondition {
   String propertyName();
   LocalTime upper();
   LocalTime lower();

@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2018, Divroll, and individual contributors
+ * Copyright 2020, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -16,21 +16,13 @@
  */
 package com.divroll.datafactory.conditions;
 
-import java.io.Serializable;
-import javax.annotation.Nullable;
+import jetbrains.exodus.entitystore.EntityIterable;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public interface EntityCondition extends Serializable {
-  @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+public interface CustomQueryCondition extends EntityCondition {
+  EntityIterable execute(EntityIterable context);
 }
