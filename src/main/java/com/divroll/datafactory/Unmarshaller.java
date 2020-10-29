@@ -142,7 +142,13 @@ public class Unmarshaller {
         referenceToScope.set(entities);
         referenceToScope.get().intersect(EntityIterables.build(entityList));
       } else if (entityCondition instanceof PropertyMinMaxCondition) {
-
+        PropertyMinMaxCondition propertyMinMaxCondition = (PropertyMinMaxCondition) entityCondition;
+        String propertyName = propertyMinMaxCondition.propertyName();
+        Comparable minValue = propertyMinMaxCondition.minValue();
+        Comparable maxValue = propertyMinMaxCondition.maxValue();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.find(entityType, propertyName, minValue, maxValue));
+        referenceToScope.set(entities);
       } else if (entityCondition instanceof PropertyNearbyCondition) {
         PropertyNearbyCondition propertyNearbyCondition = (PropertyNearbyCondition) entityCondition;
         String propertyName = propertyNearbyCondition.propertyName();
@@ -174,7 +180,13 @@ public class Unmarshaller {
             referenceToScope.get().intersect(txn.find(entityType, propertyName, containsValue));
         referenceToScope.set(entities);
       } else if (entityCondition instanceof PropertyStartsWithCondition) {
-
+        PropertyStartsWithCondition startsWithCondition =
+            (PropertyStartsWithCondition) entityCondition;
+        String propertyName = startsWithCondition.propertyName();
+        String startsWithValue = startsWithCondition.startsWith();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.findStartingWith(entityType, propertyName, startsWithValue));
+        referenceToScope.set(entities);
       } else if (entityCondition instanceof CustomQueryCondition) {
         CustomQueryCondition customQueryCondition = (CustomQueryCondition) entityCondition;
         referenceToScope.set(customQueryCondition.execute(referenceToScope.get()));
