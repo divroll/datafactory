@@ -16,7 +16,11 @@
  */
 package com.divroll.datafactory.database.impl;
 
+import com.divroll.datafactory.GeoPoint;
+import com.divroll.datafactory.LocalTimeRange;
 import com.divroll.datafactory.bindings.EmbeddedEntityBinding;
+import com.divroll.datafactory.bindings.GeoPointBinding;
+import com.divroll.datafactory.bindings.LocalTimeRangeBinding;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.exceptions.ThrowingConsumer;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
@@ -112,6 +116,10 @@ public final class DatabaseManagerImpl implements DatabaseManager {
                 txn, EmbeddedEntityIterable.class, EmbeddedEntityBinding.BINDING);
             ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
                 txn, EmbeddedArrayIterable.class, EmbeddedEntityBinding.BINDING);
+            ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
+                txn, GeoPoint.class, GeoPointBinding.BINDING);
+            ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
+                txn, LocalTimeRange.class, LocalTimeRangeBinding.BINDING);
             entityStoreMap.put(dir,
                 ((PersistentEntityStore) txn.getStore()));
           });

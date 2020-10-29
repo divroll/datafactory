@@ -56,6 +56,9 @@ import jetbrains.exodus.entitystore.Entity;
 import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.StoreTransaction;
+import org.gavaghan.geodesy.Ellipsoid;
+import org.gavaghan.geodesy.GeodeticCalculator;
+import org.gavaghan.geodesy.GlobalPosition;
 import org.jetbrains.annotations.NotNull;
 
 import static com.divroll.datafactory.exceptions.Throwing.rethrow;
@@ -132,7 +135,7 @@ public class Unmarshaller {
         List<Entity> entityList = new ArrayList<>();
         entities.forEach(entity -> {
           LocalTimeRange reference = (LocalTimeRange) entity.getProperty(propertyName);
-          if(MathHelper.inRange(upper, lower, reference.getUpper(), reference.getLower())) {
+          if (MathHelper.inRange(upper, lower, reference.getUpper(), reference.getLower())) {
             entityList.add(entity);
           }
         });
@@ -146,20 +149,22 @@ public class Unmarshaller {
         Double longitude = propertyNearbyCondition.longitude();
         Double latitude = propertyNearbyCondition.latitude();
         Double distance = propertyNearbyCondition.distance();
-        EntityIterable entities =
+        EntityIterable tempEntities =
             referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
-        List<Entity> entityList = new ArrayList<>();
-        entities.forEach(entity -> {
-          GeoPoint reference = (GeoPoint) entity.getProperty(propertyName);
-          double instantaneousDistance =
-              MathHelper.distFrom(latitude, longitude, reference.getLatitude(),
-                  reference.getLatitude());
-          if (distance >= instantaneousDistance) {
-            entityList.add(entity);
+        GeodeticCalculator geoCalc = new GeodeticCalculator();
+        Ellipsoid reference = Ellipsoid.WGS84;
+        GlobalPosition pointA = new GlobalPosition(latitude, longitude, 0.0);
+        tempEntities.forEach(entity -> {
+          GeoPoint geoReference = (GeoPoint) entity.getProperty(propertyName);
+          GlobalPosition pointB =
+              new GlobalPosition(geoReference.getLatitude(), geoReference.getLongitude(),
+                  0.0);
+          double instantaneousDistance = geoCalc.calculateGeodeticCurve(reference, pointB, pointA)
+              .getEllipsoidalDistance();
+          if (distance < instantaneousDistance) {
+            referenceToScope.set(referenceToScope.get().minus(txn.getSingletonIterable(entity)));
           }
         });
-        referenceToScope.set(entities);
-        referenceToScope.get().intersect(EntityIterables.build(entityList));
       } else if (entityCondition instanceof PropertyContainsCondition) {
         PropertyContainsCondition propertyContainsCondition =
             (PropertyContainsCondition) entityCondition;

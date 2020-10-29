@@ -16,6 +16,8 @@
  */
 package com.divroll.datafactory;
 
+import com.google.common.base.Preconditions;
+import java.io.Serializable;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,19 +25,35 @@ import org.jetbrains.annotations.NotNull;
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class GeoPoint implements Comparable<GeoPoint> {
+public class GeoPoint implements Comparable<GeoPoint>, Serializable {
 
   private Double longitude;
   private Double latitude;
 
   public GeoPoint(Double longitude, Double latitude) {
+    Preconditions.checkArgument(
+        latitude >= -90 && latitude <= 90, "Latitude must be in the range of [-90, 90] degrees");
+    Preconditions.checkArgument(
+        longitude >= -180 && longitude <= 180,
+        "Longitude must be in the range of [-180, 180] degrees");
     setLongitude(longitude);
     setLatitude(latitude);
   }
 
   @Override public int compareTo(@NotNull GeoPoint geoPoint) {
-    // TODO: Implement this method
     return 0;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    GeoPoint geoPoint = (GeoPoint) obj;
+    return Double.compare(geoPoint.latitude, latitude) == 0
+        && Double.compare(geoPoint.longitude, longitude) == 0;
   }
 
   public Double getLongitude() {
@@ -53,5 +71,4 @@ public class GeoPoint implements Comparable<GeoPoint> {
   public void setLatitude(Double latitude) {
     this.latitude = latitude;
   }
-
 }

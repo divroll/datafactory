@@ -16,6 +16,7 @@
  */
 package com.divroll.datafactory;
 
+import java.io.Serializable;
 import java.time.LocalTime;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class LocalTimeRange implements Comparable<LocalTimeRange> {
+public class LocalTimeRange implements Comparable<LocalTimeRange>, Serializable {
 
   private LocalTime lower;
   private LocalTime upper;

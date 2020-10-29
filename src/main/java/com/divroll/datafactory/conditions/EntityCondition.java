@@ -21,6 +21,19 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
+ *
+ * @see LinkCondition
+ * @see OppositeLinkCondition
+ * @see PropertyContainsCondition
+ * @see PropertyEqualCondition
+ * @see PropertyLocalTimeRangeCondition
+ * @see PropertyMinMaxCondition
+ * @see PropertyNearbyCondition
+ * @see PropertyStartsWithCondition
+ * @see PropertyUniqueCondition
+ * @see CustomCondition
+ * @see CustomQueryCondition
+ *
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT

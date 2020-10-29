@@ -24,10 +24,8 @@ import java.time.LocalTime;
  * @since 0-SNAPSHOT
  */
 public class MathHelper {
-  public static double distFrom(double lat1, double lng1, double lat2, double lng2) {
-    throw new IllegalArgumentException("Not yet implemented");
-  }
-  public static boolean inRange(LocalTime upper1, LocalTime lower1, LocalTime upper2, LocalTime lower2) {
+  public static boolean inRange(LocalTime upper1, LocalTime lower1, LocalTime upper2,
+      LocalTime lower2) {
     throw new IllegalArgumentException("Not yet implemented");
   }
 }

@@ -17,6 +17,7 @@
 package com.divroll.datafactory;
 
 import com.divroll.datafactory.bindings.EmbeddedEntityBinding;
+import com.divroll.datafactory.bindings.GeoPointBinding;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import com.divroll.datafactory.repositories.EntityStore;
@@ -46,7 +47,9 @@ public class DataFactoryTest {
         .addCustomPropertyType("/var/test/", EmbeddedArrayIterable.class,
             EmbeddedEntityBinding.BINDING)
         .addCustomPropertyType("/var/test/", EmbeddedEntityIterable.class,
-            EmbeddedEntityBinding.BINDING);
+            EmbeddedEntityBinding.BINDING)
+        .addCustomPropertyType("/var/test/", GeoPoint.class,
+            GeoPointBinding.BINDING);
   }
 
   @Test
