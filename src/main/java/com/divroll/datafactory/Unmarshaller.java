@@ -121,7 +121,7 @@ public class Unmarshaller {
       if (entityCondition instanceof PropertyEqualCondition) {
         PropertyEqualCondition propertyEqualCondition = (PropertyEqualCondition) entityCondition;
         String propertyName = propertyEqualCondition.propertyName();
-        Comparable propertyValue = propertyEqualCondition.propertyName();
+        Comparable propertyValue = propertyEqualCondition.propertyValue();
         referenceToScope.set(
             referenceToScope.get().intersect(txn.find(entityType, propertyName, propertyValue)));
       } else if (entityCondition instanceof PropertyLocalTimeRangeCondition) {

@@ -419,9 +419,6 @@ public class EntityStoreTest {
         .entityId(entityId)
         .build();
     entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
-      updatedEntity.propertyMap().forEach((propName, propValue) -> {
-        System.out.println(propName + ":" + propValue);
-      });
       assertEquals("fooBar", updatedEntity.propertyMap().get("foo"));
       assertEquals(true, updatedEntity.propertyMap().get("hasFooBar"));
     });
@@ -437,7 +434,7 @@ public class EntityStoreTest {
         .putPropertyMap("foo", "bar")
         .build()).get();
     assertNotNull(dataFactoryEntity);
-    System.out.println(dataFactoryEntity.entityId());
+    assertNotNull(dataFactoryEntity.entityId());
     EntityQuery query = new EntityQueryBuilder()
         .environment("/var/test/")
         .entityId(dataFactoryEntity.entityId())

@@ -25,7 +25,8 @@ import com.divroll.datafactory.builders.DataFactoryEntityBuilder;
 import com.divroll.datafactory.builders.queries.EntityQuery;
 import com.divroll.datafactory.builders.queries.EntityQueryBuilder;
 import com.divroll.datafactory.repositories.EntityStore;
-import jetbrains.exodus.bindings.ComparableSet;
+import com.godaddy.logging.Logger;
+import com.godaddy.logging.LoggerFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -37,6 +38,8 @@ import static org.junit.Assert.assertNotNull;
  * @since 0-SNAPSHOT
  */
 public class PropertyNearbyConditionTest {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(PropertyNearbyConditionTest.class);
 
   @Test
   public void testNearbyCondition() throws Exception {
@@ -79,7 +82,7 @@ public class PropertyNearbyConditionTest {
         .build();
     DataFactoryEntities entities = entityStore.getEntities(entityQuery).get();
     long time = System.currentTimeMillis() - start;
-    System.out.println("Time to complete (ms): " + time);
+    LOG.info("Time to complete (ms): " + time);
     assertNotNull(entities);
     assertEquals(2, entities.entities().size());
   }
@@ -110,5 +113,4 @@ public class PropertyNearbyConditionTest {
     assertNotNull(entities);
     assertEquals(0, entities.entities().size());
   }
-
 }
