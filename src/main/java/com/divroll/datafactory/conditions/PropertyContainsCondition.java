@@ -16,20 +16,16 @@
  */
 package com.divroll.datafactory.conditions;
 
-import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
-import javax.annotation.Nullable;
-import jetbrains.exodus.entitystore.Entity;
+import org.immutables.value.Value;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class HasBeenLikedCondition implements CustomCondition {
-  @Override public void execute(Entity entityInContext) throws UnsatisfiedConditionException {
-    Comparable likes = entityInContext.getProperty("likes");
-    if(likes == null || !Integer.class.isAssignableFrom(likes.getClass())) {
-      throw new UnsatisfiedConditionException(this);
-    }
-  }
+@Value.Immutable
+@Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
+public interface PropertyContainsCondition<T extends Comparable> extends EntityCondition {
+  String propertyName();
+  T innerPropertyValue();
 }

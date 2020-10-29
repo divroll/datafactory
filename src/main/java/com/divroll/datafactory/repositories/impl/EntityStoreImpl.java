@@ -59,9 +59,9 @@ import jetbrains.exodus.entitystore.PersistentStoreTransaction;
 import org.jetbrains.annotations.NotNull;
 import util.ComparableHashMap;
 
+import static com.divroll.datafactory.Unmarshaller.processActions;
 import static com.divroll.datafactory.Unmarshaller.processConditions;
 import static com.divroll.datafactory.Unmarshaller.processUnsatisfiedConditions;
-import static com.divroll.datafactory.Unmarshaller.processActions;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -178,19 +178,18 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
 
     manager.transactPersistentEntityStore(dir, true, txn -> {
 
-      AtomicReference<EntityIterable> result = null;
+      AtomicReference<EntityIterable> result = new AtomicReference<>();
       if (nameSpace != null && !nameSpace.isEmpty() && entityType.get() != null) {
-        result.set(txn.findWithProp(entityType.get(), Constants.NAMESPACE_PROPERTY)
+        result.set(txn.getAll(entityType.get())
             .intersect(txn.find(entityType.get(), Constants.NAMESPACE_PROPERTY, nameSpace)));
       } else if (entityType.get() != null) {
-        result.set(txn.getAll(entityType.get())
-            .minus(txn.findWithProp(entityType.get(), Constants.NAMESPACE_PROPERTY)));
+        result.set(txn.getAll(entityType.get()));
       }
-
-      processConditions(entityType.get(), query.conditions(), result, txn);
 
       if (query.entityId() == null && entityType.get() == null) {
         throw new IllegalArgumentException("Either entity ID or entity type must be present");
+      } else if (query.entityId() == null) {
+        processConditions(entityType.get(), query.conditions(), result, txn);
       }
 
       if (query.entityId() != null) {

@@ -14,22 +14,18 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory;
 
-import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
-import javax.annotation.Nullable;
-import jetbrains.exodus.entitystore.Entity;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-public class HasBeenLikedCondition implements CustomCondition {
-  @Override public void execute(Entity entityInContext) throws UnsatisfiedConditionException {
-    Comparable likes = entityInContext.getProperty("likes");
-    if(likes == null || !Integer.class.isAssignableFrom(likes.getClass())) {
-      throw new UnsatisfiedConditionException(this);
-    }
+public class TestEnvironment {
+  private static final String TEST_ENVIRONMENT = "/var/test/";
+  public static String getEnvironment() {
+    return TEST_ENVIRONMENT + UUID.randomUUID().toString();
   }
 }

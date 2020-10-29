@@ -35,6 +35,7 @@ import com.divroll.datafactory.conditions.CustomQueryCondition;
 import com.divroll.datafactory.conditions.EntityCondition;
 import com.divroll.datafactory.conditions.LinkCondition;
 import com.divroll.datafactory.conditions.OppositeLinkCondition;
+import com.divroll.datafactory.conditions.PropertyContainsCondition;
 import com.divroll.datafactory.conditions.PropertyEqualCondition;
 import com.divroll.datafactory.conditions.PropertyLocalTimeRangeCondition;
 import com.divroll.datafactory.conditions.PropertyMinMaxCondition;
@@ -110,7 +111,7 @@ public class Unmarshaller {
     return entityInContext;
   }
 
-  public static void processConditions(@NotNull String entityType,
+  public static EntityIterable processConditions(@NotNull String entityType,
       @NotNull List<EntityCondition> conditions,
       @NotNull AtomicReference<EntityIterable> referenceToScope, @NotNull StoreTransaction txn) {
     conditions.forEach(entityCondition -> {
@@ -159,6 +160,14 @@ public class Unmarshaller {
         });
         referenceToScope.set(entities);
         referenceToScope.get().intersect(EntityIterables.build(entityList));
+      } else if (entityCondition instanceof PropertyContainsCondition) {
+        PropertyContainsCondition propertyContainsCondition =
+            (PropertyContainsCondition) entityCondition;
+        String propertyName = propertyContainsCondition.propertyName();
+        Comparable containsValue = propertyContainsCondition.innerPropertyValue();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.find(entityType, propertyName, containsValue));
+        referenceToScope.set(entities);
       } else if (entityCondition instanceof PropertyStartsWithCondition) {
 
       } else if (entityCondition instanceof CustomQueryCondition) {
@@ -166,6 +175,7 @@ public class Unmarshaller {
         referenceToScope.set(customQueryCondition.execute(referenceToScope.get()));
       }
     });
+    return referenceToScope.get();
   }
 
   /**

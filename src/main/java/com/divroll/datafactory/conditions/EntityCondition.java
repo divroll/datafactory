@@ -18,6 +18,7 @@ package com.divroll.datafactory.conditions;
 
 import java.io.Serializable;
 import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -25,12 +26,12 @@ import javax.annotation.Nullable;
  * @since 0-SNAPSHOT
  */
 public interface EntityCondition extends Serializable {
+  enum BINARY_OP {
+    INTERSECT, MINUS, UNION, CONCAT
+  }
   @Nullable
-  EntityCondition intersect();
-  @Nullable
-  EntityCondition union();
-  @Nullable
-  EntityCondition minus();
-  @Nullable
-  EntityCondition concat();
+  @Value.Default
+  default BINARY_OP binaryOperator() {
+    return BINARY_OP.INTERSECT;
+  }
 }
