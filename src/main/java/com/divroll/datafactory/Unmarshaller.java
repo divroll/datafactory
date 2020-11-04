@@ -41,13 +41,11 @@ import com.divroll.datafactory.conditions.PropertyLocalTimeRangeCondition;
 import com.divroll.datafactory.conditions.PropertyMinMaxCondition;
 import com.divroll.datafactory.conditions.PropertyNearbyCondition;
 import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
+import com.divroll.datafactory.conditions.PropertyUniqueCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
-import com.divroll.datafactory.helpers.EntityIterables;
-import com.divroll.datafactory.helpers.MathHelper;
 import com.google.common.collect.Range;
 import java.io.InputStream;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -55,6 +53,7 @@ import java.util.regex.Pattern;
 import jetbrains.exodus.entitystore.Entity;
 import jetbrains.exodus.entitystore.EntityId;
 import jetbrains.exodus.entitystore.EntityIterable;
+import jetbrains.exodus.entitystore.PersistentEntityStore;
 import jetbrains.exodus.entitystore.StoreTransaction;
 import org.gavaghan.geodesy.Ellipsoid;
 import org.gavaghan.geodesy.GeodeticCalculator;
@@ -131,23 +130,18 @@ public class Unmarshaller {
         LocalTime upper = propertyLocalTimeRangeCondition.upper();
         LocalTime lower = propertyLocalTimeRangeCondition.lower();
         EntityIterable entities =
-            referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
-        List<Entity> entityList = new ArrayList<>();
-        entities.forEach(entity -> {
-          LocalTimeRange reference = (LocalTimeRange) entity.getProperty(propertyName);
-          if (MathHelper.inRange(upper, lower, reference.getUpper(), reference.getLower())) {
-            entityList.add(entity);
-          }
-        });
+            referenceToScope.get()
+                .intersect(txn.find(entityType, propertyName, new LocalTimeRange(lower, lower),
+                    new LocalTimeRange(upper, upper)));
         referenceToScope.set(entities);
-        referenceToScope.get().intersect(EntityIterables.build(entityList));
       } else if (entityCondition instanceof PropertyMinMaxCondition) {
         PropertyMinMaxCondition propertyMinMaxCondition = (PropertyMinMaxCondition) entityCondition;
         String propertyName = propertyMinMaxCondition.propertyName();
         Comparable minValue = propertyMinMaxCondition.minValue();
         Comparable maxValue = propertyMinMaxCondition.maxValue();
         EntityIterable entities =
-            referenceToScope.get().intersect(txn.find(entityType, propertyName, minValue, maxValue));
+            referenceToScope.get()
+                .intersect(txn.find(entityType, propertyName, minValue, maxValue));
         referenceToScope.set(entities);
       } else if (entityCondition instanceof PropertyNearbyCondition) {
         PropertyNearbyCondition propertyNearbyCondition = (PropertyNearbyCondition) entityCondition;
@@ -155,6 +149,8 @@ public class Unmarshaller {
         Double longitude = propertyNearbyCondition.longitude();
         Double latitude = propertyNearbyCondition.latitude();
         Double distance = propertyNearbyCondition.distance();
+        ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
+            .setCachingDisabled(true);
         EntityIterable tempEntities =
             referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
         GeodeticCalculator geoCalc = new GeodeticCalculator();
@@ -171,6 +167,8 @@ public class Unmarshaller {
             referenceToScope.set(referenceToScope.get().minus(txn.getSingletonIterable(entity)));
           }
         });
+        ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
+            .setCachingDisabled(false);
       } else if (entityCondition instanceof PropertyContainsCondition) {
         PropertyContainsCondition propertyContainsCondition =
             (PropertyContainsCondition) entityCondition;
@@ -185,7 +183,8 @@ public class Unmarshaller {
         String propertyName = startsWithCondition.propertyName();
         String startsWithValue = startsWithCondition.startsWith();
         EntityIterable entities =
-            referenceToScope.get().intersect(txn.findStartingWith(entityType, propertyName, startsWithValue));
+            referenceToScope.get()
+                .intersect(txn.findStartingWith(entityType, propertyName, startsWithValue));
         referenceToScope.set(entities);
       } else if (entityCondition instanceof CustomQueryCondition) {
         CustomQueryCondition customQueryCondition = (CustomQueryCondition) entityCondition;
@@ -205,6 +204,7 @@ public class Unmarshaller {
    * @throws UnsatisfiedConditionException
    */
   public static void processUnsatisfiedConditions(
+      @NotNull AtomicReference<EntityIterable> scope,
       @NotNull List<EntityCondition> conditions,
       @NotNull Entity entityInContext, @NotNull StoreTransaction txn)
       throws UnsatisfiedConditionException {
@@ -260,9 +260,17 @@ public class Unmarshaller {
           throw new UnsatisfiedConditionException(entityCondition);
         }
       } else if (entityCondition instanceof PropertyLocalTimeRangeCondition) {
-        PropertyLocalTimeRangeCondition localTimeRangeCondition =
+        PropertyLocalTimeRangeCondition propertyLocalTimeRangeCondition =
             (PropertyLocalTimeRangeCondition) entityCondition;
-        throw new IllegalArgumentException("Not yet implemented");
+        String propertyName = propertyLocalTimeRangeCondition.propertyName();
+        LocalTime upper = propertyLocalTimeRangeCondition.upper();
+        LocalTime lower = propertyLocalTimeRangeCondition.lower();
+        Comparable propertyValue = entityInContext.getProperty(propertyName);
+        Range<Comparable> range =
+            Range.closed(new LocalTimeRange(lower, lower), new LocalTimeRange(upper, upper));
+        if (!range.contains(propertyValue)) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
       } else if (entityCondition instanceof PropertyMinMaxCondition) {
         PropertyMinMaxCondition minMaxCondition = (PropertyMinMaxCondition) entityCondition;
         String propertyName = minMaxCondition.propertyName();
@@ -290,6 +298,15 @@ public class Unmarshaller {
             throw new UnsatisfiedConditionException(entityCondition);
           }
         }
+      } else if (entityCondition instanceof PropertyUniqueCondition) {
+        PropertyUniqueCondition propertyUniqueCondition = (PropertyUniqueCondition) entityCondition;
+        String propertyName = propertyUniqueCondition.propertyName();
+        Comparable propertyValue = propertyUniqueCondition.propertyValue();
+        if (scope.get()
+            .intersect(txn.find(entityInContext.getType(), propertyName, propertyValue))
+            .getFirst() != null) {
+          throw new UnsatisfiedConditionException(entityCondition);
+        }
       } else if (entityCondition instanceof CustomCondition) {
         CustomCondition customCondition = (CustomCondition) entityCondition;
         customCondition.execute(entityInContext);
@@ -304,7 +321,7 @@ public class Unmarshaller {
       @NotNull AtomicReference<EntityIterable> reference, @NotNull Entity entityInContext,
       @NotNull StoreTransaction txn) {
     dataFactoryEntity.actions().forEach(
-        action -> {
+        rethrow(action -> {
           if (action instanceof LinkAction) {
             LinkAction linkAction = (LinkAction) action;
             String targetId = linkAction.otherEntityId();
@@ -445,7 +462,7 @@ public class Unmarshaller {
           } else {
             throw new IllegalArgumentException("Invalid entity action");
           }
-        });
+        }));
     return entityInContext;
   }
 

@@ -20,6 +20,7 @@ import com.divroll.datafactory.GeoPoint;
 import com.divroll.datafactory.LocalTimeRange;
 import com.divroll.datafactory.bindings.EmbeddedEntityBinding;
 import com.divroll.datafactory.bindings.GeoPointBinding;
+import com.divroll.datafactory.bindings.LocalTimeBinding;
 import com.divroll.datafactory.bindings.LocalTimeRangeBinding;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.exceptions.ThrowingConsumer;
@@ -30,6 +31,7 @@ import com.godaddy.logging.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -116,6 +118,8 @@ public final class DatabaseManagerImpl implements DatabaseManager {
                 txn, EmbeddedEntityIterable.class, EmbeddedEntityBinding.BINDING);
             ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
                 txn, EmbeddedArrayIterable.class, EmbeddedEntityBinding.BINDING);
+            ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
+                txn, LocalTime.class, LocalTimeBinding.BINDING);
             ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
                 txn, GeoPoint.class, GeoPointBinding.BINDING);
             ((PersistentEntityStore) txn.getStore()).registerCustomPropertyType(
