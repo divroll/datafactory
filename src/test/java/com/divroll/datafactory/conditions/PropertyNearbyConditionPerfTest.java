@@ -27,6 +27,9 @@ import com.divroll.datafactory.builders.queries.EntityQueryBuilder;
 import com.divroll.datafactory.repositories.EntityStore;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -46,37 +49,71 @@ public class PropertyNearbyConditionPerfTest {
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     String environment = TestEnvironment.getEnvironment();
-    entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(environment)
-        .entityType("Foo")
-        .putPropertyMap("foo", "bar")
-        .putPropertyMap("geoLocation", new GeoPoint(120.976187, 14.581310))
-        .build()).get();
     long start = System.currentTimeMillis();
-    for (int i = 0; i < 1000; i++) {
+
+    for (int i = 0; i < 999; i++) {
       entityStore.saveEntity(new DataFactoryEntityBuilder()
           .environment(environment)
-          .entityType("Foo")
-          .putPropertyMap("foo", "bar")
+          .entityType("Room")
           .putPropertyMap("geoLocation", new GeoPoint(120.954228, 14.301893))
           .build()).get();
     }
+
+    entityStore.saveEntity(new DataFactoryEntityBuilder()
+        .environment(environment)
+        .entityType("Room")
+        .putPropertyMap("geoLocation", new GeoPoint(120.976187, 14.581310))
+        .build()).get();
+
+    DataFactoryEntities dataFactoryEntities =
+        entityStore.getEntities(new EntityQueryBuilder()
+            .environment(environment)
+            .entityType("Room")
+            .max(10000)
+            .build()).get();
+
+    Assert.assertEquals(1000L, dataFactoryEntities.count().longValue());
+
     long time = System.currentTimeMillis() - start;
     LOG.info("Time to save complete (ms): " + time);
     start = System.currentTimeMillis();
-    EntityQuery entityQuery = new EntityQueryBuilder()
-        .environment(environment)
-        .entityType("Foo")
-        .addConditions(new PropertyNearbyConditionBuilder()
-            .propertyName("geoLocation")
-            .longitude(120.976187)
-            .latitude(14.581310)
-            .distance(100.0)
-            .build())
-        .build();
-    DataFactoryEntities entities = entityStore.getEntities(entityQuery).get();
-    time = System.currentTimeMillis() - start;
-    LOG.info("Time to query complete (ms): " + time);
-    assertEquals(1L, entities.entities().size());
+    List<DataFactoryEntity> matched = new ArrayList<>();
+    List<Long> times = new ArrayList<>();
+
+    boolean hasMore = true;
+    int offset = 0;
+    int max = 100;
+    int loopCount = 0;
+    while (true) {
+      EntityQuery entityQuery = new EntityQueryBuilder()
+          .environment(environment)
+          .entityType("Room")
+          .addConditions(new PropertyNearbyConditionBuilder()
+              .propertyName("geoLocation")
+              .longitude(120.976187)
+              .latitude(14.581310)
+              .distance(100.0)
+              .build())
+          .offset(offset)
+          .max(max)
+          .build();
+      DataFactoryEntities entities = entityStore.getEntities(entityQuery).get();
+      matched.addAll(entities.entities());
+      time = System.currentTimeMillis() - start;
+      times.add(time);
+      loopCount++;
+      offset = loopCount * max;
+      hasMore = ((offset * max) < entities.count());
+      if (!hasMore) {
+        break;
+      }
+    }
+    times.forEach(aLong -> {
+      LOG.info("Time to query complete (ms): " + aLong);
+    });
+    assertEquals(1L, loopCount);
+    assertEquals(1L, matched.size());
   }
+
+
 }

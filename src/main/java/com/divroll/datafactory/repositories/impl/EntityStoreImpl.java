@@ -24,13 +24,19 @@ import com.divroll.datafactory.actions.PropertyRenameAction;
 import com.divroll.datafactory.builders.DataFactoryEntities;
 import com.divroll.datafactory.builders.DataFactoryEntitiesBuilder;
 import com.divroll.datafactory.builders.DataFactoryEntity;
+import com.divroll.datafactory.builders.DataFactoryEntityType;
+import com.divroll.datafactory.builders.DataFactoryEntityTypeBuilder;
+import com.divroll.datafactory.builders.DataFactoryEntityTypes;
+import com.divroll.datafactory.builders.DataFactoryEntityTypesBuilder;
 import com.divroll.datafactory.builders.DataFactoryProperty;
 import com.divroll.datafactory.builders.queries.BlobQuery;
 import com.divroll.datafactory.builders.queries.EntityQuery;
+import com.divroll.datafactory.builders.queries.EntityTypeQuery;
 import com.divroll.datafactory.builders.queries.LinkQuery;
 import com.divroll.datafactory.conditions.UnsatisfiedCondition;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.exceptions.DataFactoryException;
+import com.divroll.datafactory.lucene.LuceneIndexer;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import com.divroll.datafactory.repositories.EntityStore;
@@ -74,9 +80,12 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
 
   private DatabaseManager manager;
 
-  public EntityStoreImpl(DatabaseManager databaseManager)
+  private LuceneIndexer searchIndexer;
+
+  public EntityStoreImpl(DatabaseManager databaseManager, LuceneIndexer searchIndexer)
       throws DataFactoryException, NotBoundException, RemoteException {
     this.manager = databaseManager;
+    this.searchIndexer = searchIndexer;
   }
 
   @Override public Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
@@ -117,7 +126,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
            * Process entity conditions, if there are no {@linkplain UnsatisfiedCondition}
            * process the actions, blobs and properties
            */
-          processUnsatisfiedConditions(entity.conditions(), entityInContext, txn);
+          processUnsatisfiedConditions(reference, entity.conditions(), entityInContext, txn);
 
           /**
            * Process entity actions within the context of the {@linkplain Entity}
@@ -189,7 +198,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
       if (query.entityId() == null && entityType.get() == null) {
         throw new IllegalArgumentException("Either entity ID or entity type must be present");
       } else if (query.entityId() == null) {
-        processConditions(entityType.get(), query.conditions(), result, txn);
+        processConditions(searchIndexer, entityType.get(), query.conditions(), result, txn);
       }
 
       if (query.entityId() != null) {
@@ -205,10 +214,8 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
       } else {
         result.set(
             Unmarshaller.filterContext(result, query.filters(), entityType.get(), txn));
-        count.set(result.get().count());
-        result.set(result.get()
-            .skip(query.offset().intValue())
-            .take(query.max().intValue()));
+        count.set(result.get().size());
+        result.set(result.get().skip(query.offset()).take(query.max()));
 
         for (Entity entity : result.get()) {
           final Map<String, Comparable> comparableMap = new LinkedHashMap<>();
@@ -417,6 +424,33 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
       }
     });
     return success[0];
+  }
+
+  @Override public Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
+      throws DataFactoryException, NotBoundException, RemoteException {
+    AtomicReference<DataFactoryEntityTypes> atomicReference = new AtomicReference<>();
+    manager.transactPersistentEntityStore(query.environment(), true, txn -> {
+      List<String> entityTypes = txn.getEntityTypes();
+      Long count = null;
+      if(query.count()) {
+        EntityIterable entities = txn.getAll(query.entityType());
+        count = entities.size();
+      }
+      List<DataFactoryEntityType> dataFactoryEntityTypeList = new ArrayList<>();
+      if (entityTypes != null) {
+        for (String entityType : entityTypes) {
+          dataFactoryEntityTypeList.add(new DataFactoryEntityTypeBuilder()
+              .entityTypeName(entityType)
+              .build());
+        }
+      }
+      DataFactoryEntityTypes dataFactoryEntityTypes = new DataFactoryEntityTypesBuilder()
+          .entityTypes(dataFactoryEntityTypeList)
+          .entityCount(count)
+          .build();
+      atomicReference.set(dataFactoryEntityTypes);
+    });
+    return Optional.ofNullable(atomicReference.get());
   }
 
   /**

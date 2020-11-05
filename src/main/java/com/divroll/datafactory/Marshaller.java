@@ -24,12 +24,16 @@ import com.divroll.datafactory.builders.DataFactoryBlob;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import com.healthmarketscience.rmiio.SimpleRemoteInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jetbrains.exodus.entitystore.Entity;
 import jetbrains.exodus.entitystore.EntityIterable;
 import jetbrains.exodus.entitystore.StoreTransaction;
@@ -95,7 +99,7 @@ public class Marshaller {
     });
 
     List<DataFactoryBlob> blobs = new ArrayList<>();
-    List<DataFactoryEntity> links = new ArrayList<>();
+    Multimap<String,DataFactoryEntity> links = ArrayListMultimap.create();
 
     if (linkQueries == null) {
       linkQueries = new ArrayList<>();
@@ -105,14 +109,14 @@ public class Marshaller {
       if (linkQuery.targetEntityId() != null) {
         linkedEntities.forEach(linkedEntity -> {
           if (linkedEntity.getId().toString().equals(linkQuery.targetEntityId())) {
-            links.add(new Marshaller()
+            links.put(linkQuery.linkName(), new Marshaller()
                 .with(linkedEntity)
                 .build());
           }
         });
       } else {
         linkedEntities.forEach(linkedEntity -> {
-          links.add(new Marshaller()
+          links.put(linkQuery.linkName(), new Marshaller()
               .with(linkedEntity)
               .build());
         });
@@ -126,9 +130,11 @@ public class Marshaller {
       entity.getBlobNames().forEach(blobName -> {
         if (blobQuery.blobName().equals(blobName) && blobQuery.include()) {
           InputStream blobStream = entity.getBlob(blobName);
+          Long blobSize = entity.getBlobSize(blobName);
           blobs.add(new DataFactoryBlobBuilder()
               .blobName(blobName)
               .blobStream(new SimpleRemoteInputStream(blobStream))
+              .blobSize(blobSize)
               .build());
         }
       });

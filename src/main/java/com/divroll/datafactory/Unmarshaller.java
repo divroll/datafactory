@@ -30,6 +30,7 @@ import com.divroll.datafactory.actions.PropertyIndexAction;
 import com.divroll.datafactory.actions.PropertyRemoveAction;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.TransactionFilter;
+import com.divroll.datafactory.conditions.BlobExistsCondition;
 import com.divroll.datafactory.conditions.CustomCondition;
 import com.divroll.datafactory.conditions.CustomQueryCondition;
 import com.divroll.datafactory.conditions.EntityCondition;
@@ -43,7 +44,9 @@ import com.divroll.datafactory.conditions.PropertyNearbyCondition;
 import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
 import com.divroll.datafactory.conditions.PropertyUniqueCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
+import com.divroll.datafactory.lucene.LuceneIndexer;
 import com.google.common.collect.Range;
+import com.google.common.io.ByteStreams;
 import java.io.InputStream;
 import java.time.LocalTime;
 import java.util.List;
@@ -113,7 +116,8 @@ public class Unmarshaller {
     return entityInContext;
   }
 
-  public static EntityIterable processConditions(@NotNull String entityType,
+  public static EntityIterable processConditions(@NotNull LuceneIndexer indexer,
+      @NotNull String entityType,
       @NotNull List<EntityCondition> conditions,
       @NotNull AtomicReference<EntityIterable> referenceToScope, @NotNull StoreTransaction txn) {
     conditions.forEach(entityCondition -> {
@@ -121,8 +125,8 @@ public class Unmarshaller {
         PropertyEqualCondition propertyEqualCondition = (PropertyEqualCondition) entityCondition;
         String propertyName = propertyEqualCondition.propertyName();
         Comparable propertyValue = propertyEqualCondition.propertyValue();
-        referenceToScope.set(
-            referenceToScope.get().intersect(txn.find(entityType, propertyName, propertyValue)));
+        EntityIterable entities = txn.find(entityType, propertyName, propertyValue);
+        referenceToScope.set(referenceToScope.get().intersect(entities));
       } else if (entityCondition instanceof PropertyLocalTimeRangeCondition) {
         PropertyLocalTimeRangeCondition propertyLocalTimeRangeCondition =
             (PropertyLocalTimeRangeCondition) entityCondition;
@@ -185,6 +189,12 @@ public class Unmarshaller {
         EntityIterable entities =
             referenceToScope.get()
                 .intersect(txn.findStartingWith(entityType, propertyName, startsWithValue));
+        referenceToScope.set(entities);
+      } else if (entityCondition instanceof BlobExistsCondition) {
+        BlobExistsCondition blobExistsCondition = (BlobExistsCondition) entityCondition;
+        String blobName = blobExistsCondition.blobName();
+        EntityIterable entities =
+            referenceToScope.get().intersect(txn.findWithBlob(entityType, blobName));
         referenceToScope.set(entities);
       } else if (entityCondition instanceof CustomQueryCondition) {
         CustomQueryCondition customQueryCondition = (CustomQueryCondition) entityCondition;

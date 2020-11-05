@@ -16,8 +16,8 @@
  */
 package com.divroll.datafactory.bindings;
 
-import com.divroll.datafactory.GeoPoint;
 import java.io.ByteArrayInputStream;
+import java.time.LocalTime;
 import jetbrains.exodus.ArrayByteIterable;
 import jetbrains.exodus.ByteIterable;
 import jetbrains.exodus.bindings.ComparableBinding;
@@ -42,22 +42,22 @@ public class GeoPointBinding extends ComparableBinding {
   }
 
   /**
-   * De-serializes {@linkplain ByteIterable} entry to a {@linkplain GeoPoint} value.
+   * De-serializes {@linkplain ByteIterable} entry to a {@linkplain LocalTime} value.
    *
    * @param entry {@linkplain ByteIterable} instance
    * @return de-serialized value
    */
-  public static GeoPoint entryToGeoPoint(@NotNull final ByteIterable entry) {
-    return (GeoPoint) BINDING.entryToObject(entry);
+  public static LocalTime entryToLocalTime(@NotNull final ByteIterable entry) {
+    return (LocalTime) BINDING.entryToObject(entry);
   }
 
   /**
-   * Serializes {@linkplain GeoPoint} value to the {@linkplain ArrayByteIterable} entry.
+   * Serializes {@linkplain LocalTime} value to the {@linkplain ArrayByteIterable} entry.
    *
    * @param object value to serialize
    * @return {@linkplain ArrayByteIterable} entry
    */
-  public static ArrayByteIterable geoPointToEntry(final GeoPoint object) {
+  public static ArrayByteIterable localTimeToEntry(final LocalTime object) {
     return BINDING.objectToEntry(object);
   }
 }

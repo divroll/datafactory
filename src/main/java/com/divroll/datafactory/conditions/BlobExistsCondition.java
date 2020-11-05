@@ -1,6 +1,6 @@
 /*
  * Divroll, Platform for Hosting Static Sites
- * Copyright 2020, Divroll, and individual contributors
+ * Copyright 2018, Divroll, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -14,12 +14,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.builders;
+package com.divroll.datafactory.conditions;
 
-import com.healthmarketscience.rmiio.RemoteInputStream;
-import java.io.Serializable;
-import javax.annotation.Nullable;
-import jetbrains.exodus.entitystore.Entity;
 import org.immutables.value.Value;
 
 /**
@@ -29,28 +25,6 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface DataFactoryBlob extends Serializable {
+public interface BlobExistsCondition extends EntityCondition {
   String blobName();
-
-  @Nullable
-  Long blobSize();
-
-  RemoteInputStream blobStream();
-
-  /**
-   * Indicates that this blob can be {@code set} to multiple {@linkplain Entity}. If used for a
-   * delete operation this property indicates whether to delete the blob from multiple {@linkplain
-   * Entity} matching the query.
-   *
-   * @return
-   */
-  @Nullable
-  @Value.Default
-  default Boolean allowMultiple() {
-    return false;
-  }
-
-  @Nullable
-  Long count();
-
 }

@@ -18,8 +18,10 @@ package com.divroll.datafactory.repositories.impl;
 
 import com.divroll.datafactory.builders.DataFactoryEntities;
 import com.divroll.datafactory.builders.DataFactoryEntity;
+import com.divroll.datafactory.builders.DataFactoryEntityTypes;
 import com.divroll.datafactory.builders.DataFactoryProperty;
 import com.divroll.datafactory.builders.queries.EntityQuery;
+import com.divroll.datafactory.builders.queries.EntityTypeQuery;
 import com.divroll.datafactory.exceptions.DataFactoryException;
 import com.divroll.datafactory.repositories.EntityStore;
 import java.rmi.NotBoundException;
@@ -119,5 +121,13 @@ public class EntityStoreClientImpl implements EntityStore {
     EntityStore entityStore =
         (EntityStore) registry.lookup(EntityStore.class.getName());
     return entityStore.removeEntityType(query);
+  }
+
+  @Override public Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
+      throws DataFactoryException, NotBoundException, RemoteException {
+      Registry registry = LocateRegistry.getRegistry(host, port);
+      EntityStore entityStore =
+          (EntityStore) registry.lookup(EntityStore.class.getName());
+      return entityStore.getEntityTypes(query);
   }
 }

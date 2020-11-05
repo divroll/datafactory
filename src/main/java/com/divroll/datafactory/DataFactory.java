@@ -19,6 +19,7 @@ package com.divroll.datafactory;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.database.impl.DatabaseManagerImpl;
 import com.divroll.datafactory.exceptions.DataFactoryException;
+import com.divroll.datafactory.lucene.impl.LuceneIndexerImpl;
 import com.divroll.datafactory.repositories.EntityStore;
 import com.divroll.datafactory.repositories.impl.EntityStoreImpl;
 import com.godaddy.logging.Logger;
@@ -29,7 +30,12 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
+import jetbrains.exodus.ByteIterable;
 import jetbrains.exodus.bindings.ComparableBinding;
+import jetbrains.exodus.bindings.StringBinding;
+import jetbrains.exodus.env.Environment;
+import jetbrains.exodus.env.Store;
+import jetbrains.exodus.env.StoreConfig;
 import lombok.SneakyThrows;
 
 /**
@@ -106,11 +112,13 @@ public class DataFactory {
   public EntityStore getEntityStore()
       throws DataFactoryException, RemoteException, NotBoundException {
     if (entityStore == null) {
-      entityStore = new EntityStoreImpl(DatabaseManagerImpl.getInstance());
+      entityStore =
+          new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
     }
     if (!Arrays.asList(registry.list()).contains(EntityStore.class.getName())) {
       registry.rebind(EntityStore.class.getName(), entityStore);
     }
     return entityStore;
   }
+
 }

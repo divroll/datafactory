@@ -34,7 +34,7 @@ public class LocalTimeRange implements Comparable<LocalTimeRange>, Serializable 
     setLower(lower);
     setUpper(upper);
   }
-  
+
   @Override public int compareTo(@NotNull LocalTimeRange range) {
     if ((range.lower.isBefore(lower) && range.upper.isBefore(lower)) && (range.lower.isBefore(upper)
         && range.upper.isBefore(upper))) {

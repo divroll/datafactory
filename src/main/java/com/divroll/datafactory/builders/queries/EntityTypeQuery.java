@@ -14,12 +14,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.builders;
+package com.divroll.datafactory.builders.queries;
 
-import com.healthmarketscience.rmiio.RemoteInputStream;
+import com.divroll.datafactory.Constants;
 import java.io.Serializable;
 import javax.annotation.Nullable;
-import jetbrains.exodus.entitystore.Entity;
 import org.immutables.value.Value;
 
 /**
@@ -29,28 +28,20 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface DataFactoryBlob extends Serializable {
-  String blobName();
+public interface EntityTypeQuery extends Serializable {
 
-  @Nullable
-  Long blobSize();
-
-  RemoteInputStream blobStream();
-
-  /**
-   * Indicates that this blob can be {@code set} to multiple {@linkplain Entity}. If used for a
-   * delete operation this property indicates whether to delete the blob from multiple {@linkplain
-   * Entity} matching the query.
-   *
-   * @return
-   */
-  @Nullable
   @Value.Default
-  default Boolean allowMultiple() {
-    return false;
+  default String environment() {
+    return System.getProperty(Constants.DATAFACTORY_DIRECTORY_ENVIRONMENT);
   }
 
   @Nullable
-  Long count();
+  String entityType();
+
+  @Nullable
+  @Value.Default
+  default Boolean count() {
+    return true;
+  }
 
 }

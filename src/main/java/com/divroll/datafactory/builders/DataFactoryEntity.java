@@ -20,8 +20,11 @@ import com.divroll.datafactory.Constants;
 import com.divroll.datafactory.actions.EntityAction;
 import com.divroll.datafactory.conditions.EntityCondition;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,8 +75,8 @@ public interface DataFactoryEntity extends Serializable {
 
   @Nullable
   @Value.Default
-  default List<DataFactoryEntity> links() {
-    return new ArrayList<>();
+  default Multimap<String,DataFactoryEntity> links() {
+    return ArrayListMultimap.create();
   }
 
   @Nullable

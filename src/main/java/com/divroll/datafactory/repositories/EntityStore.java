@@ -18,8 +18,10 @@ package com.divroll.datafactory.repositories;
 
 import com.divroll.datafactory.builders.DataFactoryEntities;
 import com.divroll.datafactory.builders.DataFactoryEntity;
+import com.divroll.datafactory.builders.DataFactoryEntityTypes;
 import com.divroll.datafactory.builders.DataFactoryProperty;
 import com.divroll.datafactory.builders.queries.EntityQuery;
+import com.divroll.datafactory.builders.queries.EntityTypeQuery;
 import com.divroll.datafactory.exceptions.DataFactoryException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -54,7 +56,8 @@ public interface EntityStore extends Remote {
    * @throws NotBoundException
    * @throws RemoteException
    */
-  Boolean removeEntity(@NotNull EntityQuery query) throws DataFactoryException, NotBoundException, RemoteException;
+  Boolean removeEntity(@NotNull EntityQuery query)
+      throws DataFactoryException, NotBoundException, RemoteException;
 
   /**
    * Remove entities matching the list of queries
@@ -74,5 +77,8 @@ public interface EntityStore extends Remote {
       throws DataFactoryException, NotBoundException, RemoteException;
 
   Boolean removeEntityType(@NotNull EntityQuery query)
+      throws DataFactoryException, NotBoundException, RemoteException;
+
+  Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
       throws DataFactoryException, NotBoundException, RemoteException;
 }
