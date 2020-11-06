@@ -28,4 +28,44 @@ public class MathHelper {
       LocalTime lower2) {
     throw new IllegalArgumentException("Not yet implemented");
   }
+
+  public static double findClosest(double arr[], double target) {
+    int n = arr.length;
+    if (target <= arr[0]) {
+      return arr[0];
+    }
+    if (target >= arr[n - 1]) {
+      return arr[n - 1];
+    }
+    int i = 0, j = n, mid = 0;
+    while (i < j) {
+      mid = (i + j) / 2;
+      if (arr[mid] == target) {
+        return arr[mid];
+      }
+      if (target < arr[mid]) {
+        if (mid > 0 && target > arr[mid - 1]) {
+          return getClosest(arr[mid - 1],
+              arr[mid], target);
+        }
+        j = mid;
+      } else {
+        if (mid < n - 1 && target < arr[mid + 1]) {
+          return getClosest(arr[mid],
+              arr[mid + 1], target);
+        }
+        i = mid + 1;
+      }
+    }
+    return arr[mid];
+  }
+
+  public static double getClosest(double val1, double val2,
+      double target) {
+    if (target - val1 >= val2 - target) {
+      return val2;
+    } else {
+      return val1;
+    }
+  }
 }

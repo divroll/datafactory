@@ -14,26 +14,37 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory;
 
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-@Value.Immutable
-@Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface PropertyNearbyCondition extends EntityCondition {
-  String propertyName();
-  Double longitude();
-  Double latitude();
-  Double distance();
-  @Nullable
-  @Value.Default
-  default Boolean useGeoHash() {
-    return false;
+public class GeoHashTest {
+  @Test
+  public void testCalculateGeoHashPrecisionIndex0() {
+    int precision = GeoHash.calculateGeoHashPrecision(0.037);
+    Assert.assertEquals(0, precision);
+    precision = GeoHash.calculateGeoHashPrecision(0.018);
+  }
+
+  @Test
+  public void testCalculateGeoHashPrecisionIndex1() {
+    int precision = GeoHash.calculateGeoHashPrecision(5004000.00);
+    Assert.assertEquals(11, precision);
+    precision = GeoHash.calculateGeoHashPrecision(5004000.00);
+    Assert.assertEquals(11, precision);
+  }
+
+  @Test
+  public void testCalculateGeoHashPrecision() {
+    int precision = GeoHash.calculateGeoHashPrecision(1000.00);
+    Assert.assertEquals(6, precision);
+    precision = GeoHash.calculateGeoHashPrecision(300.00);
+    Assert.assertEquals(5, precision);
   }
 }

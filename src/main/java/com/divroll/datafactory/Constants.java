@@ -26,6 +26,7 @@ import java.io.Serializable;
 public final class Constants implements Serializable {
   public static final String JAVA_RMI_HOST_ENVIRONMENT = "java.rmi.server.hostname";
   public static final String JAVA_RMI_PORT_ENVIRONMENT = "java.rmi.server.port";
+  public static final String JAVA_RMI_TEST_PORT_ENVIRONMENT = "java.rmi.server.test.port";
   public static final String JAVA_RMI_PORT_DEFAULT = "1099";
   public static final String DATAFACTORY_DIRECTORY_ENVIRONMENT = "datafactory.dir";
   public static final String NAMESPACE_PROPERTY = "____NAMESPACE____";

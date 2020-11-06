@@ -17,6 +17,7 @@
 package com.divroll.datafactory.actions;
 
 import com.divroll.datafactory.DataFactory;
+import com.divroll.datafactory.TestEnvironment;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.DataFactoryEntityBuilder;
 import com.divroll.datafactory.builders.queries.EntityQuery;
@@ -33,24 +34,23 @@ import static org.junit.Assert.assertEquals;
  */
 public class CustomActionTest {
 
-  private static final String TEST_ENVIRONMENT = "/var/test/";
-
   @Test
   public void testCustomAction() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     DataFactoryEntity dataFactoryEntity = new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Room")
         .putPropertyMap("likes", 10)
         .build();
     dataFactoryEntity = entityStore.saveEntity(dataFactoryEntity).get();
     entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addActions(new IncrementLikesAction(2990))
         .build());
     EntityQuery entityQuery = new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .build();
     DataFactoryEntity updatedEntity = entityStore.getEntity(entityQuery).get();

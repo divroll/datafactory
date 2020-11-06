@@ -30,12 +30,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
-import jetbrains.exodus.ByteIterable;
 import jetbrains.exodus.bindings.ComparableBinding;
-import jetbrains.exodus.bindings.StringBinding;
-import jetbrains.exodus.env.Environment;
-import jetbrains.exodus.env.Store;
-import jetbrains.exodus.env.StoreConfig;
 import lombok.SneakyThrows;
 
 /**
@@ -76,7 +71,9 @@ public class DataFactory {
       if (host == null) {
         System.setProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT, "localhost");
       }
-      String port =
+      String testPort = System.getProperty(Constants.JAVA_RMI_TEST_PORT_ENVIRONMENT,
+          Constants.JAVA_RMI_PORT_DEFAULT);
+      String port = testPort != null ? testPort :
           System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
       if (port != null) {
         registry = LocateRegistry.createRegistry(Integer.valueOf(port));
@@ -120,5 +117,4 @@ public class DataFactory {
     }
     return entityStore;
   }
-
 }

@@ -17,6 +17,7 @@
 package com.divroll.datafactory.conditions;
 
 import com.divroll.datafactory.DataFactory;
+import com.divroll.datafactory.TestEnvironment;
 import com.divroll.datafactory.actions.IncrementLikesAction;
 import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.DataFactoryEntityBuilder;
@@ -34,20 +35,19 @@ import static org.junit.Assert.assertNotNull;
  */
 public class CustomConditionTest {
 
-  private static final String TEST_ENVIRONMENT = "/var/test/";
-
   @Test(expected = UnsatisfiedConditionException.class)
   public void testCustomConditionShouldFail() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Room")
         .putPropertyMap("address", "Room 123, 456 Street, 789 Avenue")
         .build()).get();
 
     // Update entity if HasBeenLikedCondition is satisfied
     DataFactoryEntity updated = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addConditions(new HasBeenLikedCondition())
         .addActions(new IncrementLikesAction(100))
@@ -56,22 +56,23 @@ public class CustomConditionTest {
 
   @Test
   public void testCustomCondition() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Room")
         .putPropertyMap("address", "Room 123, 456 Street, 789 Avenue")
         .build()).get();
 
     entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .putPropertyMap("likes", 1)
         .build()).get();
 
     // Update entity if HasBeenLikedCondition is satisfied
     DataFactoryEntity shouldBeUpdated = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addConditions(new HasBeenLikedCondition())
         .addActions(new IncrementLikesAction(100))

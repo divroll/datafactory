@@ -17,6 +17,7 @@
 package com.divroll.datafactory.repositories;
 
 import com.divroll.datafactory.DataFactory;
+import com.divroll.datafactory.TestEnvironment;
 import com.divroll.datafactory.actions.ImmutableBlobRemoveAction;
 import com.divroll.datafactory.actions.ImmutableBlobRenameAction;
 import com.divroll.datafactory.actions.ImmutableBlobRenameRegexAction;
@@ -52,14 +53,13 @@ import static org.junit.Assert.fail;
  */
 public class EntityStoreTest {
 
-  private static final String TEST_ENVIRONMENT = "/var/test/";
-
   @Test
   public void testSaveEntity() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .build()).get();
@@ -69,11 +69,12 @@ public class EntityStoreTest {
 
   @Test
   public void testSaveEntityWithBlobRemove() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     // Create with blob
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .addBlobs(new DataFactoryBlobBuilder()
@@ -86,7 +87,7 @@ public class EntityStoreTest {
     assertNotNull(dataFactoryEntity.entityId());
     // Get with blob
     entityStore.getEntity(new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("message")
@@ -112,7 +113,7 @@ public class EntityStoreTest {
     });
     // Delete blob
     entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .entityId(dataFactoryEntity.entityId())
         .addActions(ImmutableBlobRemoveAction.builder()
@@ -121,7 +122,7 @@ public class EntityStoreTest {
         .build());
     // Get with blob, expecting blob is removed
     entityStore.getEntity(new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("message")
@@ -136,11 +137,12 @@ public class EntityStoreTest {
 
   @Test
   public void testSaveEntityWithBlobRename() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     // Create with blob
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .addBlobs(new DataFactoryBlobBuilder()
@@ -153,7 +155,7 @@ public class EntityStoreTest {
     assertNotNull(dataFactoryEntity.entityId());
     // Get with blob
     entityStore.getEntity(new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("message")
@@ -179,7 +181,7 @@ public class EntityStoreTest {
     });
     // Rename blob
     DataFactoryEntity entity = new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .entityId(dataFactoryEntity.entityId())
         .addActions(ImmutableBlobRenameAction.builder()
@@ -189,7 +191,7 @@ public class EntityStoreTest {
         .build();
     entity = entityStore.saveEntity(entity).get();
     EntityQuery entityQuery = new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(entity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("message")
@@ -215,11 +217,12 @@ public class EntityStoreTest {
 
   @Test
   public void testSaveEntityWithBlobRenameRegex() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     // Create with blob
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .addBlobs(new DataFactoryBlobBuilder()
@@ -237,7 +240,7 @@ public class EntityStoreTest {
     assertNotNull(dataFactoryEntity.entityId());
     // Rename blob with regex
     DataFactoryEntity entity = new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .entityId(dataFactoryEntity.entityId())
         .addActions(ImmutableBlobRenameRegexAction.builder()
@@ -247,7 +250,7 @@ public class EntityStoreTest {
         .build();
     entity = entityStore.saveEntity(entity).get();
     EntityQuery entityQuery = new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(entity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("OneTwoThree")
@@ -268,7 +271,7 @@ public class EntityStoreTest {
       });
     });
     entityQuery = new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(entity.entityId())
         .addBlobQueries(new BlobQueryBuilder()
             .blobName("message")
@@ -367,10 +370,11 @@ public class EntityStoreTest {
 
   @Test(expected = UnsatisfiedConditionException.class)
   public void testSaveEntityWithStartsWithShouldFail() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "fooBar")
         .build()).get();
@@ -378,7 +382,7 @@ public class EntityStoreTest {
     assertNotNull(dataFactoryEntity.entityId());
 
     dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .putPropertyMap("hasFooBaz", true)
         .addConditions(new PropertyStartsWithConditionBuilder()
@@ -390,10 +394,11 @@ public class EntityStoreTest {
 
   @Test
   public void testSaveEntityWithStartsWith() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "fooBar")
         .build()).get();
@@ -402,7 +407,7 @@ public class EntityStoreTest {
     // Update entity if property "starts with", else fail
     String entityId = dataFactoryEntity.entityId();
     dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .putPropertyMap("hasFooBar", true)
         .addConditions(new PropertyStartsWithConditionBuilder()
@@ -415,7 +420,7 @@ public class EntityStoreTest {
     assertEquals(entityId, dataFactoryEntity.entityId());
     // Get entity
     EntityQuery entityQuery = new EntityQueryBuilder()
-        .environment(TEST_ENVIRONMENT)
+        .environment(environment)
         .entityId(entityId)
         .build();
     entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
@@ -426,17 +431,18 @@ public class EntityStoreTest {
 
   @Test
   public void testGetEntity() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment("/var/test/")
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .build()).get();
     assertNotNull(dataFactoryEntity);
     assertNotNull(dataFactoryEntity.entityId());
     EntityQuery query = new EntityQueryBuilder()
-        .environment("/var/test/")
+        .environment(environment)
         .entityId(dataFactoryEntity.entityId())
         .build();
     DataFactoryEntity savedEntity = entityStore.getEntity(query).get();
@@ -447,10 +453,11 @@ public class EntityStoreTest {
 
   @Test(expected = EntityRemovedInDatabaseException.class)
   public void test() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     EntityStore entityStore = DataFactory.getInstance().getEntityStore();
     assertNotNull(entityStore);
     DataFactoryEntity dataFactoryEntity = entityStore.saveEntity(new DataFactoryEntityBuilder()
-        .environment("/var/test/")
+        .environment(environment)
         .entityType("Foo")
         .putPropertyMap("foo", "bar")
         .addActions(ImmutableLinkAction.builder()

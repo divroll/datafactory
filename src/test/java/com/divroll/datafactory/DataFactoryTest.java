@@ -43,12 +43,13 @@ public class DataFactoryTest {
 
   @Test
   public void testRegisterCustomPropertyTypes() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
     DataFactory.getInstance()
-        .addCustomPropertyType("/var/test/", EmbeddedArrayIterable.class,
+        .addCustomPropertyType(environment, EmbeddedArrayIterable.class,
             EmbeddedEntityBinding.BINDING)
-        .addCustomPropertyType("/var/test/", EmbeddedEntityIterable.class,
+        .addCustomPropertyType(environment, EmbeddedEntityIterable.class,
             EmbeddedEntityBinding.BINDING)
-        .addCustomPropertyType("/var/test/", GeoPoint.class,
+        .addCustomPropertyType(environment, GeoPoint.class,
             GeoPointBinding.BINDING);
   }
 

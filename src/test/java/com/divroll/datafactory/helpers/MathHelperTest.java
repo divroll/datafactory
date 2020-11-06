@@ -14,26 +14,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.divroll.datafactory.conditions;
+package com.divroll.datafactory.helpers;
 
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
  * @version 0-SNAPSHOT
  * @since 0-SNAPSHOT
  */
-@Value.Immutable
-@Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
-public interface PropertyNearbyCondition extends EntityCondition {
-  String propertyName();
-  Double longitude();
-  Double latitude();
-  Double distance();
-  @Nullable
-  @Value.Default
-  default Boolean useGeoHash() {
-    return false;
+public class MathHelperTest {
+  @Test
+  public void test() {
   }
 }

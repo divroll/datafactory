@@ -17,6 +17,7 @@
 package com.divroll.datafactory.conditions;
 
 import com.divroll.datafactory.DataFactory;
+import com.divroll.datafactory.GeoHash;
 import com.divroll.datafactory.GeoPoint;
 import com.divroll.datafactory.TestEnvironment;
 import com.divroll.datafactory.builders.DataFactoryEntities;
@@ -113,6 +114,57 @@ public class PropertyNearbyConditionPerfTest {
     });
     assertEquals(1L, loopCount);
     assertEquals(1L, matched.size());
+  }
+
+
+  @Test
+  public void testNearbyConditionWithGeoHash() throws Exception {
+    String environment = TestEnvironment.getEnvironment();
+    EntityStore entityStore = DataFactory.getInstance().getEntityStore();
+
+    DataFactoryEntity firstLocation = new DataFactoryEntityBuilder()
+        .environment(environment)
+        .entityType("Room")
+        .putPropertyMap("address", "Room 123, 456 Street, 789 Avenue")
+        .putPropertyMap("geoLocation", new GeoHash(120.976171, 14.580919).toString())
+        .build();
+    firstLocation = entityStore.saveEntity(firstLocation).get();
+    assertNotNull(firstLocation.entityId());
+    for(int i=0;i<10000;i++){
+      DataFactoryEntity secondLocation = new DataFactoryEntityBuilder()
+          .environment(environment)
+          .entityType("Room")
+          .putPropertyMap("address", "Room 456, 789 Street, 012 Avenue")
+          .putPropertyMap("geoLocation", new GeoHash(121.016723, 14.511879).toString())
+          .build();
+      secondLocation = entityStore.saveEntity(secondLocation).get();
+      //assertNotNull(secondLocation.entityId());
+    }
+    DataFactoryEntity thirdLocation = new DataFactoryEntityBuilder()
+        .environment(environment)
+        .entityType("Room")
+        .putPropertyMap("address", "Room 456, 789 Street, 012 Avenue")
+        .putPropertyMap("geoLocation", new GeoHash(120.976619, 14.581578).toString())
+        .build();
+    thirdLocation = entityStore.saveEntity(thirdLocation).get();
+    assertNotNull(thirdLocation);
+    long start = System.currentTimeMillis();
+    EntityQuery entityQuery = new EntityQueryBuilder()
+        .environment(environment)
+        .entityType("Room")
+        .addConditions(new PropertyNearbyConditionBuilder()
+            .propertyName("geoLocation")
+            .longitude(120.976619)
+            .latitude(14.581578)
+            .distance(100.00)
+            .useGeoHash(true)
+            .build())
+        .build();
+    DataFactoryEntities entities = entityStore.getEntities(entityQuery).get();
+    long time = System.currentTimeMillis() - start;
+    LOG.info("Time to complete query (ms): " + time);
+    assertNotNull(entities);
+    assertEquals(2, entities.entities().size());
   }
 
 

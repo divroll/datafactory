@@ -16,6 +16,7 @@
  */
 package com.divroll.datafactory;
 
+import ch.hsr.geohash.GeoHash;
 import com.divroll.datafactory.actions.BlobRemoveAction;
 import com.divroll.datafactory.actions.BlobRenameAction;
 import com.divroll.datafactory.actions.BlobRenameRegexAction;
@@ -44,6 +45,7 @@ import com.divroll.datafactory.conditions.PropertyNearbyCondition;
 import com.divroll.datafactory.conditions.PropertyStartsWithCondition;
 import com.divroll.datafactory.conditions.PropertyUniqueCondition;
 import com.divroll.datafactory.exceptions.UnsatisfiedConditionException;
+import com.divroll.datafactory.helpers.MathHelper;
 import com.divroll.datafactory.lucene.LuceneIndexer;
 import com.google.common.collect.Range;
 import com.google.common.io.ByteStreams;
@@ -153,26 +155,35 @@ public class Unmarshaller {
         Double longitude = propertyNearbyCondition.longitude();
         Double latitude = propertyNearbyCondition.latitude();
         Double distance = propertyNearbyCondition.distance();
-        ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
-            .setCachingDisabled(true);
-        EntityIterable tempEntities =
-            referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
-        GeodeticCalculator geoCalc = new GeodeticCalculator();
-        Ellipsoid reference = Ellipsoid.WGS84;
-        GlobalPosition pointA = new GlobalPosition(latitude, longitude, 0.0);
-        tempEntities.forEach(entity -> {
-          GeoPoint geoReference = (GeoPoint) entity.getProperty(propertyName);
-          GlobalPosition pointB =
-              new GlobalPosition(geoReference.getLatitude(), geoReference.getLongitude(),
-                  0.0);
-          double instantaneousDistance = geoCalc.calculateGeodeticCurve(reference, pointB, pointA)
-              .getEllipsoidalDistance();
-          if (distance < instantaneousDistance) {
-            referenceToScope.set(referenceToScope.get().minus(txn.getSingletonIterable(entity)));
-          }
-        });
-        ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
-            .setCachingDisabled(false);
+        if(propertyNearbyCondition.useGeoHash()) {
+          GeoHash geohash = GeoHash.withCharacterPrecision(latitude, longitude, 12);
+          int precision = com.divroll.datafactory.GeoHash.calculateGeoHashPrecision(distance);
+          String hashQuery = geohash.toBase32().substring(0, precision);
+          EntityIterable tempEntities =
+              referenceToScope.get().intersect(txn.findStartingWith(entityType, propertyName, hashQuery));
+          referenceToScope.set(tempEntities);
+        } else {
+          ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
+              .setCachingDisabled(true);
+          EntityIterable tempEntities =
+              referenceToScope.get().intersect(txn.findWithProp(entityType, propertyName));
+          GeodeticCalculator geoCalc = new GeodeticCalculator();
+          Ellipsoid reference = Ellipsoid.WGS84;
+          GlobalPosition pointA = new GlobalPosition(latitude, longitude, 0.0);
+          tempEntities.forEach(entity -> {
+            GeoPoint geoReference = (GeoPoint) entity.getProperty(propertyName);
+            GlobalPosition pointB =
+                new GlobalPosition(geoReference.getLatitude(), geoReference.getLongitude(),
+                    0.0);
+            double instantaneousDistance = geoCalc.calculateGeodeticCurve(reference, pointB, pointA)
+                .getEllipsoidalDistance();
+            if (distance < instantaneousDistance) {
+              referenceToScope.set(referenceToScope.get().minus(txn.getSingletonIterable(entity)));
+            }
+          });
+          ((PersistentEntityStore) referenceToScope.get().getTransaction().getStore()).getConfig()
+              .setCachingDisabled(false);
+        }
       } else if (entityCondition instanceof PropertyContainsCondition) {
         PropertyContainsCondition propertyContainsCondition =
             (PropertyContainsCondition) entityCondition;
