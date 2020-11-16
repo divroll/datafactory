@@ -24,13 +24,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class DataFactoryClientTest {
   @Test
   public void testGetInstance() throws Exception {
     DataFactory dataFactory = DataFactory.getInstance();
+    dataFactory.register();
     DataFactoryClient client = DataFactoryClient.getInstance("localhost", "1099");
     EntityStore entityStore = client.getEntityStore();
     Assert.assertNotNull(entityStore);
@@ -39,6 +38,7 @@ public class DataFactoryClientTest {
   @Test
   public void testSimpleSave() throws Exception {
     DataFactory dataFactory = DataFactory.getInstance();
+    dataFactory.register();
     await().atMost(5, TimeUnit.SECONDS);
     DataFactoryClient client = DataFactoryClient.getInstance("localhost", "1099");
     EntityStore entityStore = client.getEntityStore();

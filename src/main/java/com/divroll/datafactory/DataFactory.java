@@ -68,30 +68,31 @@ public class DataFactory {
   public static DataFactory getInstance() {
     if (instance == null) {
       instance = new DataFactory();
-      String host = System.getProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT);
-      if (host == null) {
-        System.setProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT, "localhost");
-      }
-      String testPort = System.getProperty(Constants.JAVA_RMI_TEST_PORT_ENVIRONMENT,
-          Constants.JAVA_RMI_PORT_DEFAULT);
-      String port = testPort != null ? testPort :
-          System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
-      if (port != null) {
-        registry = LocateRegistry.createRegistry(Integer.valueOf(port));
-      } else {
-        registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
-      }
-      if (instance.entityStore == null) {
-        instance.entityStore =
-            new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
-      }
-      if (!Arrays.asList(registry.list()).contains(EntityStore.class.getName())) {
-        registry.rebind(EntityStore.class.getName(), instance.entityStore);
-      }
-      process = ManagementFactory.getRuntimeMXBean().getName();
-      LOG.info("DataFactory initialized with process id: " + process);
     }
     return instance;
+  }
+
+  public void register() throws RemoteException, NotBoundException {
+    String host = System.getProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT);
+    if (host == null) {
+      System.setProperty(Constants.JAVA_RMI_HOST_ENVIRONMENT, "localhost");
+    }
+    String testPort = System.getProperty(Constants.JAVA_RMI_TEST_PORT_ENVIRONMENT,
+        Constants.JAVA_RMI_PORT_DEFAULT);
+    String port = testPort != null ? testPort :
+        System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
+    if (port != null) {
+      registry = LocateRegistry.createRegistry(Integer.valueOf(port));
+    } else {
+      registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
+    }
+    entityStore =
+        new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
+    if (!Arrays.asList(registry.list()).contains(EntityStore.class.getName())) {
+      registry.rebind(EntityStore.class.getName(), instance.entityStore);
+    }
+    process = ManagementFactory.getRuntimeMXBean().getName();
+    LOG.info("DataFactory initialized with process id: " + process);
   }
 
   /**
@@ -133,8 +134,7 @@ public class DataFactory {
   }
 
   private synchronized void waitMethod() {
-    while(true) {
-      System.out.println("DataFactory running with Process id " + process);
+    while (true) {
       try {
         this.wait();
       } catch (InterruptedException e) {
@@ -142,6 +142,4 @@ public class DataFactory {
       }
     }
   }
-
-
 }
