@@ -67,6 +67,7 @@ public class PropertyEqualConditionPerfTest {
             .propertyValue("fuu")
             .build())
         .build();
+    //System.out.println(new Gson().toJson(entityQuery));
     DataFactoryEntities entities = entityStore.getEntities(entityQuery).get();
     time = System.currentTimeMillis() - start;
     LOG.info("Time to get complete (ms): " + time);

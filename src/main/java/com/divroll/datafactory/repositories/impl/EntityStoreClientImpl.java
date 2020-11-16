@@ -24,6 +24,7 @@ import com.divroll.datafactory.builders.queries.EntityQuery;
 import com.divroll.datafactory.builders.queries.EntityTypeQuery;
 import com.divroll.datafactory.exceptions.DataFactoryException;
 import com.divroll.datafactory.repositories.EntityStore;
+import io.vavr.control.Option;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -50,7 +51,7 @@ public class EntityStoreClientImpl implements EntityStore {
     this.port = port;
   }
 
-  @Override public Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
+  @Override public Option<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
       throws DataFactoryException, NotBoundException, RemoteException {
     Registry registry = LocateRegistry.getRegistry(host, port);
     EntityStore entityStore =
@@ -59,7 +60,7 @@ public class EntityStoreClientImpl implements EntityStore {
   }
 
   @Override
-  public Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
+  public Option<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
       throws DataFactoryException, NotBoundException, RemoteException {
     Registry registry = LocateRegistry.getRegistry(host, port);
     EntityStore entityStore =
@@ -67,7 +68,7 @@ public class EntityStoreClientImpl implements EntityStore {
     return entityStore.saveEntities(entities);
   }
 
-  @Override public Optional<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
+  @Override public Option<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
     Registry registry = LocateRegistry.getRegistry(host, port);
     EntityStore entityStore =
@@ -75,7 +76,7 @@ public class EntityStoreClientImpl implements EntityStore {
     return entityStore.getEntity(query);
   }
 
-  @Override public Optional<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
+  @Override public Option<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
     Registry registry = LocateRegistry.getRegistry(host, port);
     EntityStore entityStore =
@@ -123,7 +124,7 @@ public class EntityStoreClientImpl implements EntityStore {
     return entityStore.removeEntityType(query);
   }
 
-  @Override public Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
+  @Override public Option<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
       Registry registry = LocateRegistry.getRegistry(host, port);
       EntityStore entityStore =

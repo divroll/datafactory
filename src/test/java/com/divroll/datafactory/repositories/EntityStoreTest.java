@@ -93,7 +93,7 @@ public class EntityStoreTest {
             .blobName("message")
             .include(true)
             .build())
-        .build()).ifPresent(saved -> {
+        .build()).peek(saved -> {
       assertNotNull(saved);
       assertEquals(1, saved.blobNames().length);
       assertEquals("message", saved.blobNames()[0]);
@@ -128,7 +128,7 @@ public class EntityStoreTest {
             .blobName("message")
             .include(true)
             .build())
-        .build()).ifPresent(saved -> {
+        .build()).peek(saved -> {
       assertNotNull(saved);
       assertEquals(0, Arrays.asList(saved.blobNames()).size());
       assertEquals(0, saved.blobs().size());
@@ -161,7 +161,7 @@ public class EntityStoreTest {
             .blobName("message")
             .include(true)
             .build())
-        .build()).ifPresent(saved -> {
+        .build()).peek(saved -> {
       assertNotNull(saved);
       assertEquals(1, saved.blobNames().length);
       assertEquals("message", saved.blobNames()[0]);
@@ -199,7 +199,7 @@ public class EntityStoreTest {
             .blobName("theMessage")
             .build())
         .build();
-    entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
+    entityStore.getEntity(entityQuery).peek(updatedEntity -> {
       assertFalse(Arrays.asList(updatedEntity.blobNames()).contains("message"));
       assertEquals(1, updatedEntity.blobs().size());
       updatedEntity.blobs().forEach(dataFactoryBlob -> {
@@ -256,7 +256,7 @@ public class EntityStoreTest {
             .blobName("OneTwoThree")
             .build())
         .build();
-    entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
+    entityStore.getEntity(entityQuery).peek(updatedEntity -> {
       assertEquals(2, updatedEntity.blobNames().length);
       assertEquals(1, updatedEntity.blobs().size());
       updatedEntity.blobs().forEach(dataFactoryBlob -> {
@@ -277,7 +277,7 @@ public class EntityStoreTest {
             .blobName("message")
             .build())
         .build();
-    entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
+    entityStore.getEntity(entityQuery).peek(updatedEntity -> {
       assertEquals(2, updatedEntity.blobNames().length);
       assertEquals(1, updatedEntity.blobs().size());
       updatedEntity.blobs().forEach(dataFactoryBlob -> {
@@ -423,7 +423,7 @@ public class EntityStoreTest {
         .environment(environment)
         .entityId(entityId)
         .build();
-    entityStore.getEntity(entityQuery).ifPresent(updatedEntity -> {
+    entityStore.getEntity(entityQuery).peek(updatedEntity -> {
       assertEquals("fooBar", updatedEntity.propertyMap().get("foo"));
       assertEquals(true, updatedEntity.propertyMap().get("hasFooBar"));
     });

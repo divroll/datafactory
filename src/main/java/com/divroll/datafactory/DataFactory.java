@@ -50,6 +50,7 @@ public class DataFactory {
 
   private static DataFactory instance;
   private static Registry registry;
+  private static String process;
 
   private DataFactory() {
     if (instance != null) {
@@ -80,8 +81,15 @@ public class DataFactory {
       } else {
         registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
       }
-      String process = ManagementFactory.getRuntimeMXBean().getName();
-      LOG.debug("DataFactory initialized with process id: " + process);
+      if (instance.entityStore == null) {
+        instance.entityStore =
+            new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
+      }
+      if (!Arrays.asList(registry.list()).contains(EntityStore.class.getName())) {
+        registry.rebind(EntityStore.class.getName(), instance.entityStore);
+      }
+      process = ManagementFactory.getRuntimeMXBean().getName();
+      LOG.info("DataFactory initialized with process id: " + process);
     }
     return instance;
   }
@@ -117,4 +125,23 @@ public class DataFactory {
     }
     return entityStore;
   }
+
+  public static void main(final String[] args) throws Exception {
+    LOG.info("Staring DataFactory");
+    DataFactory dataFactory = getInstance();
+    dataFactory.waitMethod();
+  }
+
+  private synchronized void waitMethod() {
+    while(true) {
+      System.out.println("DataFactory running with Process id " + process);
+      try {
+        this.wait();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+
 }

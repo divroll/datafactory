@@ -17,6 +17,7 @@
 package com.divroll.datafactory.builders;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -29,7 +30,10 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Style(visibility = Value.Style.ImplementationVisibility.PRIVATE)
 public interface DataFactoryEntities extends Serializable {
-  List<DataFactoryEntity> entities();
+  @Value.Default
+  default List<DataFactoryEntity> entities() {
+    return new ArrayList<>();
+  }
   @Nullable
   Integer offset();
   @Nullable

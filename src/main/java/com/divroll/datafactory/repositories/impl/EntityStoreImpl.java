@@ -44,6 +44,7 @@ import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
 import com.google.common.collect.FluentIterable;
 import com.healthmarketscience.rmiio.RemoteInputStreamClient;
+import io.vavr.control.Option;
 import io.vavr.control.Try;
 import java.io.InputStream;
 import java.rmi.NotBoundException;
@@ -55,7 +56,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import jetbrains.exodus.entitystore.Entity;
 import jetbrains.exodus.entitystore.EntityId;
@@ -88,14 +88,14 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
     this.searchIndexer = searchIndexer;
   }
 
-  @Override public Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
+  @Override public Option<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
       throws DataFactoryException, NotBoundException, RemoteException {
     DataFactoryEntities dataFactoryEntities = saveEntities(new DataFactoryEntity[] {entity}).get();
-    return dataFactoryEntities.entities().stream().findFirst();
+    return Option.of(dataFactoryEntities.entities().stream().findFirst().get());
   }
 
   @Override
-  public Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
+  public Option<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
       throws DataFactoryException, NotBoundException, RemoteException {
     Map<String, List<DataFactoryEntity>> envIdOrderedEntities = sort(entities);
     Iterator<String> it = envIdOrderedEntities.keySet().iterator();
@@ -160,21 +160,21 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
             .build());
       });
     }
-    return Optional.ofNullable(finalResult.get());
+    return Option.of(finalResult.get());
   }
 
-  @Override public Optional<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
+  @Override public Option<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
-    Optional<DataFactoryEntities> optional = getEntities(query);
-    if (optional.isPresent()) {
-      return optional.get().entities().stream().findFirst();
+    Option<DataFactoryEntities> optional = getEntities(query);
+    if (optional.isDefined()) {
+      return Option.of(optional.get().entities().stream().findFirst().get());
     } else {
-      return Optional.empty();
+      return Option.none();
     }
   }
 
   @Override
-  public Optional<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
+  public Option<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
 
     String dir = query.environment();
@@ -242,7 +242,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
       }
     });
 
-    return Optional.ofNullable(new DataFactoryEntitiesBuilder()
+    return Option.of(new DataFactoryEntitiesBuilder()
         .entities(remoteEntities)
         .offset(query.offset())
         .max(query.max())
@@ -426,7 +426,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
     return success[0];
   }
 
-  @Override public Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
+  @Override public Option<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
       throws DataFactoryException, NotBoundException, RemoteException {
     AtomicReference<DataFactoryEntityTypes> atomicReference = new AtomicReference<>();
     manager.transactPersistentEntityStore(query.environment(), true, txn -> {
@@ -450,7 +450,7 @@ public class EntityStoreImpl extends StoreBaseImpl implements EntityStore {
           .build();
       atomicReference.set(dataFactoryEntityTypes);
     });
-    return Optional.ofNullable(atomicReference.get());
+    return Option.of(atomicReference.get());
   }
 
   /**

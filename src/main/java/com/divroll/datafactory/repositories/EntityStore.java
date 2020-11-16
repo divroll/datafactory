@@ -23,10 +23,10 @@ import com.divroll.datafactory.builders.DataFactoryProperty;
 import com.divroll.datafactory.builders.queries.EntityQuery;
 import com.divroll.datafactory.builders.queries.EntityTypeQuery;
 import com.divroll.datafactory.exceptions.DataFactoryException;
+import io.vavr.control.Option;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,16 +36,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface EntityStore extends Remote {
 
-  Optional<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
+  Option<DataFactoryEntity> saveEntity(@NotNull DataFactoryEntity entity)
       throws DataFactoryException, DataFactoryException, NotBoundException, RemoteException;
 
-  Optional<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
+  Option<DataFactoryEntities> saveEntities(@NotNull DataFactoryEntity[] entities)
       throws DataFactoryException, NotBoundException, RemoteException;
 
-  Optional<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
+  Option<DataFactoryEntity> getEntity(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException;
 
-  Optional<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
+  Option<DataFactoryEntities> getEntities(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException;
 
   /**
@@ -79,6 +79,6 @@ public interface EntityStore extends Remote {
   Boolean removeEntityType(@NotNull EntityQuery query)
       throws DataFactoryException, NotBoundException, RemoteException;
 
-  Optional<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
+  Option<DataFactoryEntityTypes> getEntityTypes(EntityTypeQuery query)
       throws DataFactoryException, NotBoundException, RemoteException;
 }
