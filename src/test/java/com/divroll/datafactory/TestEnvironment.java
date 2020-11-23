@@ -24,7 +24,7 @@ import java.util.UUID;
  * @since 0-SNAPSHOT
  */
 public class TestEnvironment {
-  private static final String TEST_ENVIRONMENT = "/var/test/";
+  private static final String TEST_ENVIRONMENT = "/tmp/test/";
   public static String getEnvironment() {
     System.setProperty(Constants.JAVA_RMI_TEST_PORT_ENVIRONMENT, "2099");
     return TEST_ENVIRONMENT + UUID.randomUUID().toString();

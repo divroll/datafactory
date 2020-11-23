@@ -51,6 +51,7 @@ public class DataFactoryClientTest {
     Assert.assertNotNull(dataFactoryEntity);
     Assert.assertNotNull(dataFactoryEntity.entityId());
     Assert.assertEquals("bar", dataFactoryEntity.propertyMap().get("foo"));
+    dataFactory.release();
   }
 
 }
