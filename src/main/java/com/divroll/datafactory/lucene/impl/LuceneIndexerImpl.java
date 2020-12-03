@@ -1,11 +1,16 @@
 package com.divroll.datafactory.lucene.impl;
 
 import com.divroll.datafactory.lucene.LuceneIndexer;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import jetbrains.exodus.env.ContextualEnvironment;
+import jetbrains.exodus.env.Environments;
+import jetbrains.exodus.env.StoreConfig;
 import jetbrains.exodus.lucene.ExodusDirectory;
+import jetbrains.exodus.lucene.ExodusDirectoryConfig;
+import jetbrains.exodus.vfs.VfsConfig;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -44,6 +49,8 @@ public class LuceneIndexerImpl implements LuceneIndexer {
   @Override public Boolean index(String entityId, Double longitude, Double latitude)
       throws Exception {
     if (writer == null) {
+
+
       Directory dir = FSDirectory.open(Paths.get("C:/temp/Lucene"));
       Analyzer analyzer = new StandardAnalyzer();
       IndexWriterConfig iwc = new IndexWriterConfig(analyzer);

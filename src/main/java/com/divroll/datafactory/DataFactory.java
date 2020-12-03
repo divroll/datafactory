@@ -29,6 +29,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import jetbrains.exodus.bindings.ComparableBinding;
 import lombok.SneakyThrows;
@@ -81,10 +82,12 @@ public class DataFactory {
         Constants.JAVA_RMI_PORT_DEFAULT);
     String port = testPort != null ? testPort :
         System.getProperty(Constants.JAVA_RMI_PORT_ENVIRONMENT, Constants.JAVA_RMI_PORT_DEFAULT);
-    if (port != null) {
-      registry = LocateRegistry.createRegistry(Integer.valueOf(port));
-    } else {
-      registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
+    if(registry == null) {
+      if (port != null) {
+        registry = LocateRegistry.createRegistry(Integer.valueOf(port));
+      } else {
+        registry = LocateRegistry.createRegistry(Integer.valueOf(Constants.JAVA_RMI_PORT_DEFAULT));
+      }
     }
     entityStore =
         new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
@@ -105,6 +108,7 @@ public class DataFactory {
       for (int i = 0; i < classNames.length; i++) {
         registry.unbind(classNames[i]);
       }
+      UnicastRemoteObject.unexportObject(entityStore, true);
     }
     DatabaseManagerImpl.getInstance().closeEnvironments();
   }

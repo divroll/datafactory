@@ -43,9 +43,18 @@ import jetbrains.exodus.entitystore.PersistentEntityStore;
 import jetbrains.exodus.entitystore.PersistentEntityStoreConfig;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
+import jetbrains.exodus.env.ContextualEnvironment;
 import jetbrains.exodus.env.Environment;
 import jetbrains.exodus.env.EnvironmentConfig;
 import jetbrains.exodus.env.Environments;
+import jetbrains.exodus.env.StoreConfig;
+import jetbrains.exodus.lucene.ExodusDirectory;
+import jetbrains.exodus.lucene.ExodusDirectoryConfig;
+import jetbrains.exodus.vfs.VfsConfig;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -92,6 +101,22 @@ public final class DatabaseManagerImpl implements DatabaseManager {
       environmentMap.put(dir, environment);
     }
     return environment;
+  }
+
+  IndexWriter getIndexWriter(String dir) {
+    ContextualEnvironment env = Environments.newContextualInstance(dir);
+    ExodusDirectory exodusDirectory = new ExodusDirectory(env, VfsConfig.DEFAULT, StoreConfig.WITHOUT_DUPLICATES_WITH_PREFIXING, new ExodusDirectoryConfig());
+    Analyzer analyzer = new StandardAnalyzer();
+    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+    iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+    IndexWriter writer = env.computeInTransaction(txn -> {
+      try {
+        return new IndexWriter(exodusDirectory, iwc);
+      } catch (IOException e) {
+        return null;
+      }
+    });
+    return writer;
   }
 
   @Override
