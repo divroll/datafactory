@@ -18,7 +18,9 @@ package com.divroll.datafactory.database;
 
 import jetbrains.exodus.entitystore.PersistentEntityStore;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
+import jetbrains.exodus.env.ContextualEnvironment;
 import jetbrains.exodus.env.Environment;
+import jetbrains.exodus.lucene.ExodusDirectory;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -27,13 +29,16 @@ import jetbrains.exodus.env.Environment;
  */
 public interface DatabaseManager {
 
-  Environment getEnvironment(String dir);
+  Environment getEnvironment(String dir, boolean isContextual);
 
   PersistentEntityStore getPersistentEntityStore(String dir, boolean isReadOnly);
   PersistentEntityStore getPersistentEntityStore(String dir, String storeName, boolean isReadOnly);
+  ExodusDirectory getExodusDirectory(String dir);
 
   void transactPersistentEntityStore(String dir, boolean isReadOnly,
       StoreTransactionalExecutable tx);
+
+  void transactionContextualStore(String dir, String store, StoreTransactionalExecutable tx);
 
   void closeEnvironment(String dir);
 

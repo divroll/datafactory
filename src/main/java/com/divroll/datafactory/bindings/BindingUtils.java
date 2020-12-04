@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.UncheckedIOException;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -55,7 +56,7 @@ public class BindingUtils {
       return clazz.isInstance(readObject)
           ? (T) readObject : null;
     } catch (IOException e) {
-      e.printStackTrace();
+     throw new UncheckedIOException(e);
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }

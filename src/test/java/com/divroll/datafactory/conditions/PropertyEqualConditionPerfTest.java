@@ -19,7 +19,6 @@ package com.divroll.datafactory.conditions;
 import com.divroll.datafactory.DataFactory;
 import com.divroll.datafactory.TestEnvironment;
 import com.divroll.datafactory.builders.DataFactoryEntities;
-import com.divroll.datafactory.builders.DataFactoryEntity;
 import com.divroll.datafactory.builders.DataFactoryEntityBuilder;
 import com.divroll.datafactory.builders.queries.EntityQuery;
 import com.divroll.datafactory.builders.queries.EntityQueryBuilder;

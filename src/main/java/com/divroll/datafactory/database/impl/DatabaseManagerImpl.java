@@ -44,10 +44,13 @@ import jetbrains.exodus.entitystore.PersistentEntityStoreConfig;
 import jetbrains.exodus.entitystore.PersistentEntityStores;
 import jetbrains.exodus.entitystore.StoreTransactionalExecutable;
 import jetbrains.exodus.env.ContextualEnvironment;
+import jetbrains.exodus.env.ContextualStore;
 import jetbrains.exodus.env.Environment;
 import jetbrains.exodus.env.EnvironmentConfig;
 import jetbrains.exodus.env.Environments;
 import jetbrains.exodus.env.StoreConfig;
+import jetbrains.exodus.env.Transaction;
+import jetbrains.exodus.env.TransactionalExecutable;
 import jetbrains.exodus.lucene.ExodusDirectory;
 import jetbrains.exodus.lucene.ExodusDirectoryConfig;
 import jetbrains.exodus.vfs.VfsConfig;
@@ -55,6 +58,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author <a href="mailto:kerby@divroll.com">Kerby Martino</a>
@@ -67,6 +71,8 @@ public final class DatabaseManagerImpl implements DatabaseManager {
   private static final int DEFAULT_LOCK_TIMEOUT = 30000;
   private static final String DEFAULT_ENTITYSTORE_NAME = "persistentEntityStore";
 
+  Map<String, ContextualEnvironment> contextualEnvironmentMap;
+  Map<String, ExodusDirectory> exodusDirectoryMap;
   Map<String, Environment> environmentMap;
   Map<String, PersistentEntityStore> entityStoreMap;
 
@@ -78,6 +84,8 @@ public final class DatabaseManagerImpl implements DatabaseManager {
     }
     entityStoreMap = new HashMap<>();
     environmentMap = new HashMap<>();
+    contextualEnvironmentMap = new HashMap<>();
+    exodusDirectoryMap = new HashMap<>();
   }
 
   public static DatabaseManagerImpl getInstance() {
@@ -88,7 +96,7 @@ public final class DatabaseManagerImpl implements DatabaseManager {
   }
 
   @Override
-  public Environment getEnvironment(String dir) {
+  public Environment getEnvironment(String dir, boolean isContextual) {
     Environment environment = environmentMap.get(dir);
     if (environment == null) {
       EnvironmentConfig config = new EnvironmentConfig();
@@ -96,27 +104,10 @@ public final class DatabaseManagerImpl implements DatabaseManager {
       config.setEnvCloseForcedly(true);
       config.setManagementEnabled(false);
       config.setLogLockTimeout(DEFAULT_LOCK_TIMEOUT);
-      environment = deleteLockingProcessAndGetEnvironment(dir, config);
-      environmentMap.put(dir, environment);
+      environment = deleteLockingProcessAndGetEnvironment(dir, config, isContextual);
       environmentMap.put(dir, environment);
     }
     return environment;
-  }
-
-  IndexWriter getIndexWriter(String dir) {
-    ContextualEnvironment env = Environments.newContextualInstance(dir);
-    ExodusDirectory exodusDirectory = new ExodusDirectory(env, VfsConfig.DEFAULT, StoreConfig.WITHOUT_DUPLICATES_WITH_PREFIXING, new ExodusDirectoryConfig());
-    Analyzer analyzer = new StandardAnalyzer();
-    IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-    iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-    IndexWriter writer = env.computeInTransaction(txn -> {
-      try {
-        return new IndexWriter(exodusDirectory, iwc);
-      } catch (IOException e) {
-        return null;
-      }
-    });
-    return writer;
   }
 
   @Override
@@ -129,7 +120,7 @@ public final class DatabaseManagerImpl implements DatabaseManager {
       boolean isReadOnly) {
     PersistentEntityStore entityStore = entityStoreMap.get(dir);
     if (entityStore == null) {
-      Environment environment = getEnvironment(dir);
+      Environment environment = getEnvironment(dir, false);
       final PersistentEntityStoreConfig config = new PersistentEntityStoreConfig()
           .setRefactoringHeavyLinks(true)
           .setDebugSearchForIncomingLinksOnDelete(true)
@@ -156,12 +147,27 @@ public final class DatabaseManagerImpl implements DatabaseManager {
     return entityStore;
   }
 
+  @Override public ExodusDirectory getExodusDirectory(String dir) {
+    ContextualEnvironment env = (ContextualEnvironment) getEnvironment(dir, true);
+    ExodusDirectory exodusDirectory = exodusDirectoryMap.get(dir);
+    if(exodusDirectory == null) {
+      exodusDirectory = new ExodusDirectory(env, VfsConfig.DEFAULT, StoreConfig.WITHOUT_DUPLICATES_WITH_PREFIXING, new ExodusDirectoryConfig());
+      exodusDirectoryMap.put(dir, exodusDirectory);
+    }
+    return exodusDirectoryMap.get(dir);
+  }
+
   @Override
   public void transactPersistentEntityStore(String dir, boolean isReadOnly,
       StoreTransactionalExecutable txn) {
     final PersistentEntityStore entityStore =
         getPersistentEntityStore(dir, isReadOnly);
     entityStore.executeInTransaction(txn);
+  }
+
+  @Override public void transactionContextualStore(String dir, String store, StoreTransactionalExecutable tx) {
+    final ContextualEnvironment environment = (ContextualEnvironment) getEnvironment(dir, true);
+    ContextualStore contextualStore = environment.openStore(store, StoreConfig.WITHOUT_DUPLICATES);
   }
 
   @Override public void closeEnvironment(String dir) {
@@ -178,10 +184,10 @@ public final class DatabaseManagerImpl implements DatabaseManager {
   }
 
   private Environment deleteLockingProcessAndGetEnvironment(String dir,
-      EnvironmentConfig config) {
+      EnvironmentConfig config, boolean isContextual) {
     Environment env = null;
     try {
-      env = Environments.newInstance(dir, config);
+      env = isContextual ? Environments.newContextualInstance(dir,config) : Environments.newInstance(dir, config);
     } catch (Exception e) {
       if (e.getMessage().contains("Can't acquire environment lock")) {
         try {
@@ -192,7 +198,7 @@ public final class DatabaseManagerImpl implements DatabaseManager {
           String cmd = isWindows ? "taskkill /F /PID " + processId : "kill -9 " + processId;
           Runtime.getRuntime().exec(cmd);
           // Try again
-          env = Environments.newInstance(dir, config);
+          env = isContextual ? Environments.newContextualInstance(dir,config) : Environments.newInstance(dir, config);
         } catch (FileNotFoundException ex) {
           LOG.error("Lock file not found");
         } catch (IOException ex) {

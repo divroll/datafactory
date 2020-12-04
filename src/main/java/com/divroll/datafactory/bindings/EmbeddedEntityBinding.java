@@ -25,6 +25,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import jetbrains.exodus.bindings.ComparableBinding;
 import jetbrains.exodus.util.LightOutputStream;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +60,7 @@ public class EmbeddedEntityBinding extends ComparableBinding implements Serializ
       return clazz.isInstance(readObject)
           ? (T) readObject : null;
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new UncheckedIOException(e);
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }

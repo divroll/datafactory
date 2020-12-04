@@ -36,7 +36,7 @@ import com.divroll.datafactory.builders.queries.LinkQuery;
 import com.divroll.datafactory.conditions.UnsatisfiedCondition;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.exceptions.DataFactoryException;
-import com.divroll.datafactory.lucene.LuceneIndexer;
+import com.divroll.datafactory.indexers.LuceneIndexer;
 import com.divroll.datafactory.properties.EmbeddedArrayIterable;
 import com.divroll.datafactory.properties.EmbeddedEntityIterable;
 import com.divroll.datafactory.repositories.EntityStore;

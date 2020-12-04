@@ -19,11 +19,12 @@ package com.divroll.datafactory;
 import com.divroll.datafactory.database.DatabaseManager;
 import com.divroll.datafactory.database.impl.DatabaseManagerImpl;
 import com.divroll.datafactory.exceptions.DataFactoryException;
-import com.divroll.datafactory.lucene.impl.LuceneIndexerImpl;
+import com.divroll.datafactory.indexers.impl.LuceneIndexerImpl;
 import com.divroll.datafactory.repositories.EntityStore;
 import com.divroll.datafactory.repositories.impl.EntityStoreImpl;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
+import com.google.common.base.Preconditions;
 import java.lang.management.ManagementFactory;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -121,6 +122,10 @@ public class DataFactory {
 
   public EntityStore getEntityStore()
       throws DataFactoryException, RemoteException, NotBoundException {
+    //Preconditions.checkNotNull(registry, "RMI registry should not be null");
+    if(registry == null) {
+      register();
+    }
     if (entityStore == null) {
       entityStore =
           new EntityStoreImpl(DatabaseManagerImpl.getInstance(), LuceneIndexerImpl.getInstance());
